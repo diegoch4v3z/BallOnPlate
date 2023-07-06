@@ -29,7 +29,7 @@ class touchScreen:
 
         # Create ROS Node 
         rospy.init_node('Touchscreen')
-        self.pub = rospy.Publisher('Touchscreen data', Int32MultiArray, queue_size=10)
+        self.pub = rospy.Publisher('touchscreenData', Int32MultiArray, queue_size=10)
         self.rate = rospy.Rate(50)
         self.dev = dev
         self.ep_in = ep_in

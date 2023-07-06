@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 from touchscreen import touchScreen
 
 
+
 if __name__ == "__main__": 
-    t = touchScreen()
-    
-    
+    while True: 
+        t = touchScreen()
+
