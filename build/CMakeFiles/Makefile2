@@ -54,11 +54,13 @@ CMAKE_BINARY_DIR = /home/cortana/Ball_On_Plate_ws/build
 
 # The main recursive "all" target.
 all: gtest/all
+all: ballOnPlatePkg/all
 
 .PHONY : all
 
 # The main recursive "preinstall" target.
 preinstall: gtest/preinstall
+preinstall: ballOnPlatePkg/preinstall
 
 .PHONY : preinstall
 
@@ -69,8 +71,27 @@ clean: CMakeFiles/clean_test_results.dir/clean
 clean: CMakeFiles/tests.dir/clean
 clean: CMakeFiles/download_extra_data.dir/clean
 clean: gtest/clean
+clean: ballOnPlatePkg/clean
 
 .PHONY : clean
+
+#=============================================================================
+# Directory level rules for directory ballOnPlatePkg
+
+# Recursive "all" directory target.
+ballOnPlatePkg/all:
+
+.PHONY : ballOnPlatePkg/all
+
+# Recursive "preinstall" directory target.
+ballOnPlatePkg/preinstall:
+
+.PHONY : ballOnPlatePkg/preinstall
+
+# Recursive "clean" directory target.
+ballOnPlatePkg/clean: ballOnPlatePkg/CMakeFiles/_catkin_empty_exported_target.dir/clean
+
+.PHONY : ballOnPlatePkg/clean
 
 #=============================================================================
 # Directory level rules for directory gtest
@@ -372,6 +393,33 @@ gtest: gtest/googletest/CMakeFiles/gtest.dir/rule
 gtest/googletest/CMakeFiles/gtest.dir/clean:
 	$(MAKE) -f gtest/googletest/CMakeFiles/gtest.dir/build.make gtest/googletest/CMakeFiles/gtest.dir/clean
 .PHONY : gtest/googletest/CMakeFiles/gtest.dir/clean
+
+#=============================================================================
+# Target rules for target ballOnPlatePkg/CMakeFiles/_catkin_empty_exported_target.dir
+
+# All Build rule for target.
+ballOnPlatePkg/CMakeFiles/_catkin_empty_exported_target.dir/all:
+	$(MAKE) -f ballOnPlatePkg/CMakeFiles/_catkin_empty_exported_target.dir/build.make ballOnPlatePkg/CMakeFiles/_catkin_empty_exported_target.dir/depend
+	$(MAKE) -f ballOnPlatePkg/CMakeFiles/_catkin_empty_exported_target.dir/build.make ballOnPlatePkg/CMakeFiles/_catkin_empty_exported_target.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/cortana/Ball_On_Plate_ws/build/CMakeFiles --progress-num= "Built target _catkin_empty_exported_target"
+.PHONY : ballOnPlatePkg/CMakeFiles/_catkin_empty_exported_target.dir/all
+
+# Build rule for subdir invocation for target.
+ballOnPlatePkg/CMakeFiles/_catkin_empty_exported_target.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/cortana/Ball_On_Plate_ws/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 ballOnPlatePkg/CMakeFiles/_catkin_empty_exported_target.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/cortana/Ball_On_Plate_ws/build/CMakeFiles 0
+.PHONY : ballOnPlatePkg/CMakeFiles/_catkin_empty_exported_target.dir/rule
+
+# Convenience name for target.
+_catkin_empty_exported_target: ballOnPlatePkg/CMakeFiles/_catkin_empty_exported_target.dir/rule
+
+.PHONY : _catkin_empty_exported_target
+
+# clean rule for target.
+ballOnPlatePkg/CMakeFiles/_catkin_empty_exported_target.dir/clean:
+	$(MAKE) -f ballOnPlatePkg/CMakeFiles/_catkin_empty_exported_target.dir/build.make ballOnPlatePkg/CMakeFiles/_catkin_empty_exported_target.dir/clean
+.PHONY : ballOnPlatePkg/CMakeFiles/_catkin_empty_exported_target.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

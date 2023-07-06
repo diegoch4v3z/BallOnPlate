@@ -1,2 +1,2 @@
-
+ballOnPlatePkg
 -DCATKIN_DEVEL_PREFIX=/home/cortana/Ball_On_Plate_ws/devel -DCMAKE_INSTALL_PREFIX=/home/cortana/Ball_On_Plate_ws/install -G Unix Makefiles

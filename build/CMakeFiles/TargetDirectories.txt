@@ -35,3 +35,11 @@
 /home/cortana/Ball_On_Plate_ws/build/gtest/googletest/CMakeFiles/test.dir
 /home/cortana/Ball_On_Plate_ws/build/gtest/googletest/CMakeFiles/gtest_main.dir
 /home/cortana/Ball_On_Plate_ws/build/gtest/googletest/CMakeFiles/gtest.dir
+/home/cortana/Ball_On_Plate_ws/build/ballOnPlatePkg/CMakeFiles/install/strip.dir
+/home/cortana/Ball_On_Plate_ws/build/ballOnPlatePkg/CMakeFiles/install/local.dir
+/home/cortana/Ball_On_Plate_ws/build/ballOnPlatePkg/CMakeFiles/install.dir
+/home/cortana/Ball_On_Plate_ws/build/ballOnPlatePkg/CMakeFiles/list_install_components.dir
+/home/cortana/Ball_On_Plate_ws/build/ballOnPlatePkg/CMakeFiles/rebuild_cache.dir
+/home/cortana/Ball_On_Plate_ws/build/ballOnPlatePkg/CMakeFiles/edit_cache.dir
+/home/cortana/Ball_On_Plate_ws/build/ballOnPlatePkg/CMakeFiles/test.dir
+/home/cortana/Ball_On_Plate_ws/build/ballOnPlatePkg/CMakeFiles/_catkin_empty_exported_target.dir

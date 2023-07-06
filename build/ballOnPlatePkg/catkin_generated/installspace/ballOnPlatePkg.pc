@@ -1,0 +1,8 @@
+prefix=/home/cortana/Ball_On_Plate_ws/install
+
+Name: ballOnPlatePkg
+Description: Description of ballOnPlatePkg
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 
