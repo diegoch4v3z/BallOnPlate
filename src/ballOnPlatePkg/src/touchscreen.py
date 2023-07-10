@@ -6,11 +6,13 @@
 import os, time, signal
 from typing import Any 
 import usb.core, usb.util
-import numpy, rospy
-from std_msgs.msg import Int32MultiArray
+import numpy as np
+import rospy
+from std_msgs.msg import Float32MultiArray
 
 class touchScreen: 
-    def __init__(self, idVendor = 0x04d8, idProduct = 0x0c02):
+    def initNode(self, idVendor = 0x04d8, idProduct = 0x0c02):
+        rospy.init_node('Touchscreen', anonymous=True)
         print('Initializing touchscreen...')
         dev = usb.core.find(idVendor = idVendor, idProduct = idProduct)
         ep_in = dev[0].interfaces()[0].endpoints()[0]
@@ -28,8 +30,7 @@ class touchScreen:
             usb.util.claim_interface(dev, intf)
 
         # Create ROS Node 
-        rospy.init_node('Touchscreen')
-        self.pub = rospy.Publisher('touchscreenData', Int32MultiArray, queue_size=10)
+        self.pub = rospy.Publisher('touchscreenData', Float32MultiArray, queue_size=10)
         self.rate = rospy.Rate(50)
         self.dev = dev
         self.ep_in = ep_in
@@ -48,9 +49,17 @@ class touchScreen:
             data = None
         return [X_coordinate, Y_coordinate]
     
-    def __call__(self, *args: Any, **kwds: Any) -> Any:
-        data = Int32MultiArray()
-        coordinate = self.getData(self.dev, self.ep_in, self.ep_out)
-        data.data = [coordinate[0], coordinate[1]]
-
-        self.rate.sleep()
+    def runNode(self):
+        try:
+            while not rospy.is_shutdown():
+                data = Float32MultiArray()
+                coordinate = self.getData(self.dev, self.ep_in, self.ep_out)
+                data.data = [coordinate[0], coordinate[1]]
+                self.pub.publish(data)
+                self.rate.sleep()
+        except rospy.ROSInterruptException: 
+            pass
+if __name__ == '__main__':
+    t = touchScreen()
+    t.initNode()
+    t.runNode()
