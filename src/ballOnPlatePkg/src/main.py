@@ -10,18 +10,18 @@ from servos import servos
 from PID import PIDClass
 
 
+
 rospy.init_node('main', anonymous=True)
 
 
 if __name__ == "__main__": 
-    start_time = time.time()
+    start_time = rospy.Time.now()
     rate = rospy.Rate(50)
-    p = PIDClass()
+    duration = 10
+    #p = PIDClass()
     try: 
-        while not rospy.is_shutdown(): 
+        while (rospy.Time.now() - start_time).to_sec() < duration and not rospy.is_shutdown():
             rate.sleep()
-            if time.time() - start_time >= 10:
-                break
     except rospy.ROSInterruptException: 
         pass
         

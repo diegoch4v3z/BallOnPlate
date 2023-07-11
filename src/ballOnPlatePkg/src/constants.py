@@ -6,12 +6,12 @@
 class Constants: 
     def PIDConstants(self): 
         # PID 
-        kP_x = 1.1
+        kP_x = 2.5
         kI_x = 0.0
-        kD_x = 0.3
-        kP_y = 1.1
+        kD_x = 0.9
+        kP_y = 2.5
         kI_y = 0.0 
-        kD_y = 0.3
+        kD_y = 0.9
         setPoint = 0
         kernelSize = 10
         kernelDelay = -3

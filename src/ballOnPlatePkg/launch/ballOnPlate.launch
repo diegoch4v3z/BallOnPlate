@@ -24,12 +24,6 @@
         output = 'screen'
     ></node>
 
-    <node
-        pkg = 'ballOnPlatePkg'
-        type = 'main.py'
-        name = 'main'
-        output = 'screen'
-    ></node>
 
 
 </launch>

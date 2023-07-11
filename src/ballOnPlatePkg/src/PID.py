@@ -29,8 +29,9 @@ class PIDClass:
 
     def initNode(self): 
         rospy.init_node('PID', anonymous=True)
-        self.rate = rospy.Rate(50)
+        self.rate = rospy.Rate(240)
         self.sub = rospy.Subscriber('touchscreenData', Float32MultiArray, callback=self.callback)
+        self.pubServo = rospy.Publisher('servoData', Float32MultiArray, queue_size=10)
     def runNode(self):
         try: 
             while not rospy.is_shutdown(): 
@@ -44,14 +45,21 @@ class PIDClass:
         self.Ix = np.append(self.Ix, self.x)
         self.Iy = np.append(self.Iy, self.y)
         self.SP = np.append(self.SP, self.kPID[6])
-        print(self.kPID[7])
         if len(self.Ix) > self.kPID[7] and len(self.Iy) > self.kPID[7]: 
             self.xyFiltered = self.movingAverage(self.Ix, self.Iy, self.kPID[7],self.kPID[8])
             self.Ix[-1] = self.xyFiltered[0]
             self.Iy[-1] = self.xyFiltered[1]
         ux = self.pidFunction(self.SP[-1],self.Ix[-1], self.Ix[-2], self.kPID[9], self.kPID[10],
                               self.kPID[2], self.kPID[1], self.kPID[0])
-
+        uy = self.pidFunction(self.SP[-1],self.Iy[-1], self.Iy[-2], self.kPID[9], self.kPID[10],
+                              self.kPID[5], self.kPID[4], self.kPID[3])
+        Ux = np.append(self.Ux, ux)
+        Uy = np.append(self.Uy, uy)
+        servoData = Float32MultiArray()
+        servoData.data = [ux, uy]
+        self.pubServo.publish(servoData)
+        self.rate.sleep()
+        
     def movingAverage(self, Ix, Iy, kernelSize, kernelDelay): 
         kernel = np.ones(kernelSize)/kernelSize
         dataConvolvedX = np.convolve(Ix[-kernelSize:], kernel, mode = 'same')
