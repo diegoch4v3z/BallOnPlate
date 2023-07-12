@@ -22,5 +22,6 @@ def plotTwoAxis(data1, data2, timestamp, title, xLabel, yLabel, figure_name, lim
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
     figure_path = os.path.join(folder_path, f'{figure_name}.png')
+    plt.tight_layout()
     plt.savefig(figure_path, dpi=300)
     plt.close()

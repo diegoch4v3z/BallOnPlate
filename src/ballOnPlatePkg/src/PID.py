@@ -29,7 +29,7 @@ class PIDClass:
 
     def initNode(self): 
         rospy.init_node('PID', anonymous=True)
-        self.rate = rospy.Rate(240)
+        self.rate = rospy.Rate(200)
         self.sub = rospy.Subscriber('touchscreenData', Float32MultiArray, callback=self.callback)
         self.pubServo = rospy.Publisher('servoData', Float32MultiArray, queue_size=10)
     def runNode(self):

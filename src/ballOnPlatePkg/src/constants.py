@@ -27,9 +27,6 @@ class Constants:
         kI_y = 0.0 
         kD_y = 0.9
         setPoint = 0
-        kernelSize = 10
-        kernelDelay = -3
-        iErr = 0
         dt = 0.01
-        PIDconstants = [kP_x, kI_x, kD_x, kP_y, kI_y, kD_y, setPoint, kernelSize, kernelDelay, iErr, dt]
+        PIDconstants = [kP_x, kI_x, kD_x, kP_y, kI_y, kD_y, setPoint, dt]
         return PIDconstants
