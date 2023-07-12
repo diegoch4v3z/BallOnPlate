@@ -57,7 +57,7 @@ class PIDClass:
         Uy = np.append(self.Uy, uy)
         servoData = Float32MultiArray()
         servoData.data = [ux, uy]
-        self.pubServo.publish(servoData)
+        #self.pubServo.publish(servoData)
         self.rate.sleep()
         
     def movingAverage(self, Ix, Iy, kernelSize, kernelDelay): 

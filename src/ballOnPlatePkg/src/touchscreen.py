@@ -60,7 +60,7 @@ class touchScreen:
     def runNode(self):
         try:
             while not rospy.is_shutdown():
-                self.current_time = (rospy.Time.now() - self.start_time).to_nsec()
+                self.current_time = (rospy.Time.now() - self.start_time).to_sec()
                 self.timeSeries = np.append(self.timeSeries, self.current_time)
                 data = Float32MultiArray()
                 coordinate = self.getData(self.dev, self.ep_in, self.ep_out)
@@ -70,7 +70,7 @@ class touchScreen:
                 self.pub.publish(data)
                 self.rate.sleep()
             if self.plot: 
-                plotTwoAxis(self.dataXPlot, self.dataYPlot, self.timeSeries, 'TouchScreen Reading', 'Time (ns)', 'Coordinate Position', 'touchscreen') 
+                plotTwoAxis(self.dataXPlot, self.dataYPlot, self.timeSeries, 'TouchScreen Reading', 'Time (s)', 'Coordinate Position', 'touchscreen') 
         except rospy.ROSInterruptException: 
             pass
 if __name__ == '__main__':

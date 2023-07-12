@@ -3,12 +3,13 @@
 # Omar Garcia 
 # New Mexico State University
 
-import nengo, rospy
+import nengo, rospy, sys
 import matplotlib.pyplot as plt 
 from constants import Constants
 from std_msgs.msg import Float32MultiArray
 from plots import plotTwoAxis
 import numpy as np
+import scipy
 
 class PIDNengo: 
     def __init__(self): 
@@ -21,11 +22,44 @@ class PIDNengo:
         self.model = nengo.Network(label='PID', seed=1)
         with self.model:
             self.PIDNengoNode = touchScreenCoordinates()
-            posXY_node = nengo.Node(self.PIDNengoNode, size_out=2)
+            posXY_node = nengo.Node(self.PIDNengoNode, size_out=2, size_in=2)
+            setpoint = nengo.Node([self.kPID[6], self.kPID[6]])
+
+            #Ensembles
             posXY_ensemble = nengo.Ensemble(n_neurons=200,dimensions=2, neuron_type=nengo.Direct())
-            posXY_node_ensemble_connection = nengo.Connection(posXY_node, posXY_ensemble, synapse=None)
+            setPointEnsemble = nengo.Ensemble(n_neurons=200, dimensions=2)
+            error = nengo.Ensemble(n_neurons=400, dimensions=2)
+
+            d_e_x = nengo.Ensemble(n_neurons=100, dimensions = 1)
+            d_e_y = nengo.Ensemble(n_neurons=100, dimensions = 1)
+
+            u = nengo.Ensemble(n_neurons=200, dimensions=2)
+
+
+            # Conections 
+            nengo.Connection(setpoint, setPointEnsemble, synapse=None)
+            nengo.Connection(posXY_node, posXY_ensemble, synapse=None)
+            nengo.Connection(setPointEnsemble, error, synapse=None)
+            nengo.Connection(posXY_ensemble, error, transform=-1, synapse=None)
+
+            nengo.Connection(error[0],d_e_x,synapse=0.01,transform=1000)
+            nengo.Connection(error[0],d_e_x,synapse=0.02,transform=-1000)
+            nengo.Connection(error[1],d_e_y,synapse=0.01,transform=1000)
+            nengo.Connection(error[1],d_e_y,synapse=0.02,transform=-1000)
+            def control(x):
+                return [x[0]*self.kPID[0],x[1]*self.kPID[3]]   
+            nengo.Connection(error, u, function=control) 
+            nengo.Connection(d_e_x, u[0], transform=self.kPID[2])
+            nengo.Connection(d_e_y, u[1], transform=self.kPID[5])
+
+            
+            nengo.Connection(u, posXY_node, synapse=0.1)
             if probe: 
                 self.probesNengoPosXYEnsemble = nengo.Probe(posXY_ensemble, synapse=0.1)
+                self.probesSetPointEnsemble = nengo.Probe(setPointEnsemble, synapse=0.1)
+                self.probesError = nengo.Probe(error, synapse=0.1)
+                self.probesG = nengo.Probe(u, synapse=0.1)
+        
 
     def initNode(self): 
         self.sim = nengo.Simulator(self.model, dt=self.kPID[7])
@@ -39,7 +73,8 @@ class PIDNengo:
     def get_model(self): 
         return self.model
     def get_probes(self): 
-        return self.probesNengoPosXYEnsemble
+        return [self.probesNengoPosXYEnsemble, self.probesSetPointEnsemble, 
+                self.probesError, self.probesG]
 
 class touchScreenCoordinates: 
     def __init__(self): 
@@ -48,11 +83,15 @@ class touchScreenCoordinates:
         rospy.init_node('PIDNengo', anonymous=True)
         self.sub = rospy.Subscriber('touchscreenData', Float32MultiArray, callback=self.callback)
         self.pubServo = rospy.Publisher('servoData', Float32MultiArray, queue_size=10)
-        self.rate = rospy.Rate(80)
+        self.rate = rospy.Rate(200)
     def callback(self, msg):
         self.x = msg.data[0]
         self.y = msg.data[1]
-    def __call__(self, values): 
+    def __call__(self, t, values): 
+        servoData = Float32MultiArray()
+        servoData.data = [values[0], values[1]]
+        self.pubServo.publish(servoData)
+        self.rate.sleep()
         # self.count += 1
         # if self.count == 17:
         #     self.count = 0
@@ -68,25 +107,35 @@ class runModel:
         self.timeSeries = np.array([])
         p = PIDNengo()
         model = p.get_model()
-        sim = nengo.Simulator(model, 0.001)
+        sim = nengo.Simulator(model, 0.005)
         probes = p.get_probes()
         self.start_time = rospy.Time.now()
-
-        for i in range(3000): 
-            self.current_time = (rospy.Time.now() - self.start_time).to_nsec()
-            self.timeSeries = np.append(self.timeSeries, self.current_time)
-            sim.step()
-            dataProbe = sim.data[probes]
-        print(len(dataProbe[:, 0]), len(self.timeSeries))
-        plotTwoAxis(dataProbe[:, 0], dataProbe[:, 1], self.timeSeries, 'TouchScreen Reading', 'Time (ns)', 'Coordinate Position', 'touchscreenNengo') 
-        
-
-
-
-
+        try:
+            for i in range(2000): 
+                self.current_time = (rospy.Time.now() - self.start_time).to_sec()
+                self.timeSeries = np.append(self.timeSeries, self.current_time)
+                sim.step()
+                dataProbe0 = sim.data[probes[0]]
+                #dataProbe1 = sim.data[probes[1]]
+                dataProbe2 = sim.data[probes[2]]
+                dataProbe3 = sim.data[probes[3]]
+        except SystemExit:
+            pass
+        plotTwoAxis(dataProbe0[:, 0], dataProbe0[:, 1], self.timeSeries, 'TouchScreen Reading', 'Time (s)', 'Coordinate Position', 'touchscreenNengo') 
+        #plotTwoAxis(dataProbe1[:, 0], dataProbe1[:, 1], self.timeSeries, 'SetPoint', 'Time (s)', 'Coordinate Position', 'setPointNengo')
+        plotTwoAxis(dataProbe2[:, 0], dataProbe2[:, 1], self.timeSeries, 'Error', 'Time (s)', 'Error', 'ErrorNengo')
+        plotTwoAxis(dataProbe3[:, 0], dataProbe3[:, 1], self.timeSeries, 'Control Signal', 'Time (s)', 'Error', 'ControlSignalNengo')
+        sys.exit()
+def send_interrupt_to_other_code(self):
+    # Assuming the other code's process name is "other_code.py"
+    import os
+    process_name = "PID.py"
+    os.system("pkill -SIGINT -f {}".format(process_name))
 
 if __name__ == '__main__':
-    try: 
-        runModel()
+    try:
+        while not rospy.is_shutdown():
+            runModel()
+        send_interrupt_to_other_code()
     except rospy.ROSInterruptException: 
         pass

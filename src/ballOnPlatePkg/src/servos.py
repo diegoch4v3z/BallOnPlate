@@ -35,7 +35,7 @@ class servos:
     
     
     def callback(self, msg):
-        self.current_time = (rospy.Time.now() - self.start_time).to_nsec()
+        self.current_time = (rospy.Time.now() - self.start_time).to_sec()
         self.timeSeries = np.append(self.timeSeries, self.current_time)
         self.datauxPlot = np.append(self.datauxPlot, msg.data[0])
         self.datauyPlot = np.append(self.datauyPlot, msg.data[1])
@@ -51,8 +51,8 @@ class servos:
             while not rospy.is_shutdown():
                 self.rate.sleep()
             if self.plot: 
-                plotTwoAxis(self.datauxPlot, self.datauyPlot, self.timeSeries, 'Control Signal', 'Time (ns)', 'Control Signal Value', 'controlSignal')
-                plotTwoAxis(self.dataServoXPlot, self.dataServoYPlot, self.timeSeries, 'Mapped Signal Servo', 'Time (ns)', 'Servo Signal', 'servoSignal', limit=False) 
+                plotTwoAxis(self.datauxPlot, self.datauyPlot, self.timeSeries, 'Control Signal', 'Time (s)', 'Control Signal Value', 'controlSignal')
+                plotTwoAxis(self.dataServoXPlot, self.dataServoYPlot, self.timeSeries, 'Mapped Signal Servo', 'Time (s)', 'Servo Signal', 'servoSignal', limit=False) 
         except rospy.ROSInterruptException: 
             pass 
 
