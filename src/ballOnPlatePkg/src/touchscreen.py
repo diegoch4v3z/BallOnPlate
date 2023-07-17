@@ -9,14 +9,27 @@ import usb.core, usb.util
 import numpy as np
 import rospy
 from std_msgs.msg import Float32MultiArray
-from plots import plotTwoAxis
+from plots import plotTwoAxis, saveArray
+from constants import Constants
 
 class touchScreen: 
     def __init__(self): 
-        self.dataXPlot = np.array([0, 0])
-        self.dataYPlot = np.array([0, 0])
-        self.timeSeries = np.array([0, 0])
+        self.dataXPlot = np.array([])
+        self.dataYPlot = np.array([])
+        self.timeSeries = np.array([])
+        self.Ix = np.array([])
+        self.Iy = np.array([])
         self.plot = True
+        c = Constants()
+        self.kPID = c.PIDConstants()
+    def movingAverage(self, Ix, Iy, kernelSize, kernelDelay): 
+        kernel = np.ones(kernelSize)/kernelSize
+        dataConvolvedX = np.convolve(Ix[-kernelSize:], kernel, mode = 'same')
+        dataConvolvedY = np.convolve(Iy[-kernelSize:], kernel, mode = 'same')
+        x = dataConvolvedX[kernelDelay]
+        y = dataConvolvedY[kernelDelay]
+        return [x, y]
+
 
     def initNode(self, idVendor = 0x04d8, idProduct = 0x0c02):
         rospy.init_node('Touchscreen', anonymous=True)
@@ -60,7 +73,7 @@ class touchScreen:
     def runNode(self):
         try:
             while not rospy.is_shutdown():
-                self.current_time = (rospy.Time.now() - self.start_time).to_sec()
+                self.current_time = (rospy.Time.now()).to_sec()#(rospy.Time.now() - self.start_time).to_sec()
                 self.timeSeries = np.append(self.timeSeries, self.current_time)
                 data = Float32MultiArray()
                 coordinate = self.getData(self.dev, self.ep_in, self.ep_out)
@@ -70,7 +83,7 @@ class touchScreen:
                 self.pub.publish(data)
                 self.rate.sleep()
             if self.plot: 
-                plotTwoAxis(self.dataXPlot, self.dataYPlot, self.timeSeries, 'TouchScreen Reading', 'Time (s)', 'Coordinate Position', 'touchscreen') 
+                saveArray(self.dataXPlot, self.dataYPlot, self.timeSeries, 'touchScreenData')#, 'TouchScreen Reading', 'Time (s)', 'Coordinate Position', 'touchScreenData', 'X-Axis', 'Y-Axis', limit=True) 
         except rospy.ROSInterruptException: 
             pass
 if __name__ == '__main__':
