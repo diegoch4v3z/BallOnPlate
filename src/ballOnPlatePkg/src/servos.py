@@ -7,7 +7,7 @@ import os
 from typing import Any
 from std_msgs.msg import Float32MultiArray
 import Adafruit_PCA9685 
-import rospy
+import rospy, time, datetime
 import numpy as np
 from plots import plotTwoAxis, saveArray
 
@@ -23,9 +23,8 @@ class servos:
         self.dataServoXPlot = np.array([0, 0])
         self.dataServoYPlot = np.array([0, 0])
         self.timeSeries = np.array([0, 0])
-        
 
-        self.plot = True
+        self.plot = False
     def __call__(self, servoNo, pwmVal, randVal = 0):
         self.pwm.set_pwm(servoNo, randVal, pwmVal)
     
@@ -53,8 +52,8 @@ class servos:
             while not rospy.is_shutdown():
                 self.rate.sleep()
             if self.plot: 
-                saveArray(self.datauxPlot, self.datauyPlot, self.timeSeries, 'controlSignalData')
-                saveArray(self.dataServoXPlot, self.dataServoYPlot, self.timeSeries, 'servoSignalData')
+                saveArray(self.datauxPlot, self.datauyPlot, self.timeSeries, '10controlSignalData')
+                saveArray(self.dataServoXPlot, self.dataServoYPlot, self.timeSeries, '11servoSignalData')
                 #plotTwoAxis(self.datauxPlot, self.datauyPlot, self.timeSeries, 'Control Signal', 'Time (s)', 'Control Signal Value', 'controlSignal')
                 #plotTwoAxis(self.dataServoXPlot, self.dataServoYPlot, self.timeSeries, 'Mapped Signal Servo', 'Time (s)', 'Servo Signal', 'servoSignal', limit=False) 
         except rospy.ROSInterruptException: 

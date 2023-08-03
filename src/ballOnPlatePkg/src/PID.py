@@ -6,7 +6,7 @@
 import os, time, signal
 from typing import Any 
 import numpy as np
-import rospy
+import rospy, datetime
 from std_msgs.msg import Float32MultiArray
 from constants import Constants
 from plots import plotTwoAxis, saveArray
@@ -21,19 +21,21 @@ class PIDClass:
         self.kPID = c.PIDConstants()
 
         ## 
-        self.Ix = np.array([1, 1])
-        self.Iy = np.array([1, 1])
+        self.Ix = np.array([0, 0])
+        self.Iy = np.array([0, 0])
         self.SP = np.array([0, 0])
-        self.Ux = np.array([0, 1])
-        self.Uy = np.array([0, 1])
+        self.Ux = np.array([0, 0])
+        self.Uy = np.array([0, 0])
         self.IxPlot = np.array([0, 0])
         self.IyPlot = np.array([0, 0])
+        self.xPlot = np.array([0, 0])
+        self.yPlot = np.array([0, 0])
         self.timeSeries = np.array([0, 0])
 
 
     def initNode(self): 
         rospy.init_node('PID', anonymous=True)
-        self.rate = rospy.Rate(200)
+        self.rate = rospy.Rate(240)
         self.sub = rospy.Subscriber('touchscreenData', Float32MultiArray, callback=self.callback)
         self.pubServo = rospy.Publisher('servoData', Float32MultiArray, queue_size=10)
         self.start_time = rospy.Time.now()
@@ -45,13 +47,16 @@ class PIDClass:
             pass 
 
     def callback(self, msg): 
-        self.current_time = (rospy.Time.now()).to_sec()#(rospy.Time.now() - self.start_time).to_sec()
+        self.current_time = (rospy.Time.now() - self.start_time).to_sec() #(rospy.Time.now() - self.start_time).to_sec()
         self.timeSeries = np.append(self.timeSeries, self.current_time)
-        self.x = msg.data[0]
-        self.y = msg.data[1]
+
+        self.x = msg.data[0]                                            # Obtain data X from the touchscreen rospy
+        self.y = msg.data[1]                                            # Obtain data Y from the touchscreen rospy
         self.Ix = np.append(self.Ix, self.x)
         self.Iy = np.append(self.Iy, self.y)
-        self.SP = np.append(self.SP, self.kPID[6])
+        self.xPlot = np.append(self.xPlot, self.x)
+        self.yPlot = np.append(self.yPlot, self.y)
+        self.SP = np.append(self.SP, self.kPID[6])                      # Add set point continously
         if len(self.Ix) > self.kPID[7] and len(self.Iy) > self.kPID[7]: 
             self.xyFiltered = self.movingAverage(self.Ix, self.Iy, self.kPID[7],self.kPID[8])
             self.Ix[-1] = self.xyFiltered[0]
@@ -84,11 +89,10 @@ class PIDClass:
         dErr = (cv - pv)/dt 
         u = kP*error + kI*iErr - kD*dErr
         return u 
-    def closeNode(self): 
-        #plotTwoAxis(self.IxPlot, self.IyPlot, self.timeSeries, 'Filtered Touchscreen Reading', 'Time (s)', 'Coordinate Position', 'touchscreenFiltered', 'X-Axis', 'Y-Axis')
-        #plotTwoAxis(self.Ux, self.Uy, self.timeSeries, 'PID Value', 'Time (s)', 'Control Value', 'PIDControlValue', 'X-axis', 'Y-Axis', limit=True)
-        saveArray(self.IxPlot, self.IyPlot, self.timeSeries, 'touchScreenFilteredData')
-        saveArray(self.Ux, self.Uy, self.timeSeries, 'PIDControlValueData')
+    def closeNode(self):
+        saveArray(self.IxPlot, self.IyPlot, self.timeSeries, 'touchScreenReadingPD')
+        saveArray(self.Ux, self.Uy, self.timeSeries, 'controlPD')
+        # saveArray(self.xPlot, self.yPlot, self.timeSeries, 'touchScreenRawData')
 
 if __name__ == '__main__':
     try:
