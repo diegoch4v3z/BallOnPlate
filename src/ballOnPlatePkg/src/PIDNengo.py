@@ -12,6 +12,7 @@ import numpy as np
 import scipy, datetime, time
 import message_filters
 
+
 pop = True
 class DelayX: 
     def __init__(self, dimensions, timesteps=50):
@@ -92,7 +93,7 @@ class PIDNengo:
             nengo.Connection(d_e_y, u[1], transform=self.kPID[5])
 
             
-            nengo.Connection(u, posXY_node, synapse=0.0001)
+            nengo.Connection(u, posXY_node, synapse=0.005)
             if probe: 
                 self.probesPosXYEnsemble = nengo.Probe(posXY_ensemble)
                 self.probesSetPointEnsemble = nengo.Probe(setPointEnsemble, synapse=0.1)
@@ -140,7 +141,7 @@ class touchScreenCoordinates:
     def __call__(self, t, values): 
         servoData = Float32MultiArray()
         servoData.data = [values[0], values[1]]
-        self.pubServo.publish(servoData)
+        #self.pubServo.publish(servoData)
         self.rate.sleep()
 
         
@@ -193,7 +194,7 @@ class runModel:
         self.start_time = rospy.Time.now()
         try:
             #if pop:
-            for i in range(5000): 
+            for i in range(8000): 
                 self.current_time = (rospy.Time.now() - self.start_time).to_sec() #(time.time() - self.start_time) #(rospy.Time.now() - self.start_time).to_sec()
                 self.timeSeries = np.append(self.timeSeries, self.current_time)
                 sim.step()
