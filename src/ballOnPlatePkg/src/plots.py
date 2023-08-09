@@ -67,7 +67,7 @@ def plotTwoData(data1, data2, data3, data4, timestamp0, timestamp1, title, xLabe
     plt.tight_layout()
     plt.savefig(figure_path, dpi=200)
     plt.close()
-def plotOneData(data0, timestamp0, title, xLabel, yLabel, figureName, label1):
+def plotOneData(data0, timestamp0, title, xLabel, yLabel, figureName, label1, limit = False, lim=[0,0]):
     plt.figure()
     plt.plot(timestamp0, data0, label=label1)
     plt.grid()
@@ -75,6 +75,8 @@ def plotOneData(data0, timestamp0, title, xLabel, yLabel, figureName, label1):
     plt.xlabel(xLabel)
     plt.ylabel(yLabel)
     plt.legend()
+    if limit: 
+        plt.ylim(lim)
     current_dir = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src'
     folder_path = os.path.join(current_dir, 'plots')
     if not os.path.exists(folder_path):
@@ -114,39 +116,42 @@ def loadArray():
         data_arrays.append(loaded_data)
     
     
-    # 
+   
+
+    # 0 derivativeXNengo.npy
+    # 1 errorNengoY.npy
+    # 2 errorNengoX.npy
+    # 3 touchScreenReadingNengo.npy
+    # 4 touchScreenReadingRaw.npy
+    # 5 setPointEnsembleNengo.npy
+    # 6 controlNengo.npy
+    # 7 derivativePD.npy
+    # 8 derivativeYNengo.npy
+    # 9 controlPD.npy
+    # 10 errorPD.npy
+    # 11 touchScreenReadingPD.npy
 
     plotOneData(data_arrays[0][0], data_arrays[0][1], 'Derivative X-Axis Nengo', 'Time (s)', 'Value', 'derivativeXNengo', 'Derivative X')
-    plotOneData(data_arrays[1][0], data_arrays[1][1], 'Derivative Y-Axis Nengo', 'Time (s)', 'Value', 'derivativeYNengo', 'Derivative Y')
-    plotTwoAxis(data_arrays[2][0], data_arrays[2][1], data_arrays[2][2], 'Error Nengo', 'Time (s)', 'Value', 'errorNengo', 'X', 'Y')
+    plotOneData(data_arrays[8][0], data_arrays[8][1], 'Derivative Y-Axis Nengo', 'Time (s)', 'Value', 'derivativeYNengo', 'Derivative Y')
+    plotOneData(data_arrays[1][0], data_arrays[1][1], 'Error Nengo Y', 'Time (s)', 'Value', 'errorNengoY', 'Y')
+    plotOneData(data_arrays[2][0], data_arrays[2][1], 'Error Nengo X', 'Time (s)', 'Value', 'errorNengoX', 'X')
     plotTouchScreenData(data_arrays[4][0], data_arrays[3][0], data_arrays[4][2], data_arrays[3][2], 'Raw vs Nengo Touchscreen', 'Time (s)', 'Position', 'RawVsNengoTouchscreenX', 'X-Axis Raw', 'X-Axis Nengo')
-    plotTouchScreenData(data_arrays[4][0], data_arrays[8][0], data_arrays[4][2], data_arrays[8][2], 'Raw vs PD Touchscreen', 'Time (s)', 'Position', 'RawVsPDTouchscreenX', 'X-Axis Raw', 'X-Axis PD')
-    plotTouchScreenData(data_arrays[3][0], data_arrays[8][0], data_arrays[3][2], data_arrays[8][2], 'Nengo vs PD Touchscreen', 'Time (s)', 'Position', 'PDVsNengoTouchscreenX', 'X-Axis Nengo', 'X-Axis PD')
+    plotTouchScreenData(data_arrays[4][0], data_arrays[11][0], data_arrays[4][2], data_arrays[11][2], 'Raw vs PD Touchscreen', 'Time (s)', 'Position', 'RawVsPDTouchscreenX', 'X-Axis Raw', 'X-Axis PD')
+    plotTouchScreenData(data_arrays[3][0], data_arrays[11][0], data_arrays[3][2], data_arrays[11][2], 'Nengo vs PD Touchscreen', 'Time (s)', 'Position', 'PDVsNengoTouchscreenX', 'X-Axis Nengo', 'X-Axis PD')
     
     plotTouchScreenData(data_arrays[4][1], data_arrays[3][1], data_arrays[4][2], data_arrays[3][2], 'Raw vs Nengo Touchscreen', 'Time (s)', 'Position', 'RawVsNengoTouchscreenY', 'Y-Axis Raw', 'Y-Axis Nengo')
-    plotTouchScreenData(data_arrays[4][1], data_arrays[8][1], data_arrays[4][2], data_arrays[8][2], 'Raw vs PD Touchscreen', 'Time (s)', 'Position', 'RawVsPDTouchscreenY', 'Y-Axis Raw', 'Y-Axis PD')
-    plotTouchScreenData(data_arrays[3][1], data_arrays[8][1], data_arrays[3][2], data_arrays[8][2], 'Nengo vs PD Touchscreen', 'Time (s)', 'Position', 'PDVsNengoTouchscreenY', 'Y-Axis Nengo', 'Y-Axis PD')
+    plotTouchScreenData(data_arrays[4][1], data_arrays[11][1], data_arrays[4][2], data_arrays[11][2], 'Raw vs PD Touchscreen', 'Time (s)', 'Position', 'RawVsPDTouchscreenY', 'Y-Axis Raw', 'Y-Axis PD')
+    plotTouchScreenData(data_arrays[3][1], data_arrays[11][1], data_arrays[3][2], data_arrays[11][2], 'Nengo vs PD Touchscreen', 'Time (s)', 'Position', 'PDVsNengoTouchscreenY', 'Y-Axis Nengo', 'Y-Axis PD')
 #6 nengo
 #7 PD
-    plotTouchScreenData(data_arrays[6][0], data_arrays[7][0], data_arrays[6][2], data_arrays[7][2], 'PD vs Nengo Control X', 'Time (s)', 'Value', 'PDVSNengoControlX', 'Control Nengo', 'Control PD', lim=True)
-    plotTouchScreenData(data_arrays[6][1], data_arrays[7][1], data_arrays[6][2], data_arrays[7][2], 'PD vs Nengo Control Y', 'Time (s)', 'Value', 'PDVSNengoControlY', 'Control Nengo', 'Control PD', lim=True)
-    # PLOT the raw touchscreen data (NENGO, PD)
-    # PLOT the control data (Nengo, PD)
-    # plotTwoData(data_arrays[8][0], data_arrays[8][1], data_arrays[9][0], data_arrays[9][1], data_arrays[8][2], data_arrays[9][2], 'Nengo Touchscreen Reading vs PD Touchscreen Reading', 'Time (s)', 'Position', 'NengoVSPDtouchscreenReading', 'X-Axis Touchscreen Nengo', 'Y-Axis Touchscreen Nengo', 'X-Axis Touchscreen PD Conventional', 'Y-Axis Touchscreen PD Conventional')
-    # plotTouchScreenData(data_arrays[9][0], data_arrays[8][0], data_arrays[9][2], data_arrays[8][2], 'Nengo Touchscreen Reading vs PD Touchscreen Reading', 'Time (s)', 'Position', 'touchScreenReadingNengoPD X-Axis', 'Touchscreen reading PD X-Axis', 'Touchscreen reading Nengo - X Axis')
-    # plotTouchScreenData(data_arrays[9][1], data_arrays[8][1], data_arrays[9][2], data_arrays[8][2], 'Nengo Touchscreen Reading vs PD Touchscreen Reading', 'Time (s)', 'Position', 'touchScreenReadingNengoPD Y-Axis', 'Touchscreen reading PD Y-Axis', 'Touchscreen reading Nengo - Y Axis')
-    # plotTouchScreenData(data_arrays[0][1], data_arrays[8][1], data_arrays[0][2], data_arrays[8][2], 'Nengo Touchscreen Reading vs PD Touchscreen Filtered Reading', 'Time (s)', 'Position', 'touchScreenReadingNengoPD Y-Axis filtered', 'Touchscreen filtered reading PD Y-Axis', 'Touchscreen reading Nengo - Y Axis')
-    
-    #plotTwoData(data_arrays[6][0], data_arrays[6][1], data_arrays[1][0], data_arrays[1][1], data_arrays[6][2], data_arrays[1][2], 'TouchscreenData dt=0.001', 'Time (s)', 'Coordinate Value', 'Touchscreen vs Nengo Touchscreen', 'X-Axis Touchscreen Nengo', 'Y-Axis Touchscreen Nengo', 'X-Axis Touchscreen PD Conventional', 'Y-Axis Touchscreen PD Conventional')
-    #plotTwoAxis(data_arrays[5][0], data_arrays[5][1], data_arrays[5][2], 'ErrorNengo', 'Time (s)', 'Coordinate Value', 'ErrorNengo', 'ErrorNengo', 'X-Axis', 'Y-Axis')
-    #plotTwoAxis(data_arrays[])
+    plotTouchScreenData(data_arrays[6][0], data_arrays[9][0], data_arrays[6][2], data_arrays[9][2], 'Nengo vs PD Control X', 'Time (s)', 'Value', 'PDVSNengoControlX', 'Control Nengo', 'Control PD', lim=True)
+    plotTouchScreenData(data_arrays[6][1], data_arrays[9][1], data_arrays[6][2], data_arrays[9][2], 'Nengo vs PD Control Y', 'Time (s)', 'Value', 'PDVSNengoControlY', 'Control Nengo', 'Control PD', lim=True)
 
-    # saveArray(dataProbe0[:, 0], dataProbe0[:, 1], self.timeSeries, 'touchScreenNengoData')
-    #     saveArray(dataProbe1[:, 0], dataProbe1[:, 1], self.timeSeries, 'SetPointNengoData')
-    #     saveArray(dataProbe2[:, 0], dataProbe2[:, 1], self.timeSeries, 'ErrorNengoData')
-    #     saveArray(dataProbe3[:, 0], dataProbe3[:, 1], self.timeSeries, 'DerivativeXNengoData')
-    #     saveArray(dataProbe4[:, 0], dataProbe4[:, 1], self.timeSeries, 'DerivativeYNengoData')
-    #     saveArray(dataProbe5[:, 0], dataProbe5[:, 1], self.timeSeries, 'ControlSignalNengoData')
+    plotTouchScreenData(data_arrays[4][2], data_arrays[3][2], np.linspace(0, len(data_arrays[4][2]), len(data_arrays[4][2])), np.linspace(0, len(data_arrays[3][2]), len(data_arrays[3][2])), 'TouchScreenTime vs Nengo Time', 'Index', 'Time', 'TouchScreenTimeVsNengoTime', 'TouchScreen Time', 'Nengo Time', lim=False)
+    plotOneData(data_arrays[7][0], data_arrays[7][2], 'Derivative X PD', 'Time (s)', 'Value', 'derivativeXPD', 'Derivative X PD', limit = True, lim=[-1,1])
+    plotOneData(data_arrays[7][1], data_arrays[7][2], 'Derivative Y PD', 'Time (s)', 'Value', 'derivativeYPD', 'Derivative Y PD', limit = True, lim=[-1,1])
+    plotOneData(data_arrays[10][0], data_arrays[10][2], 'Error X PD', 'Time (s)', 'Value', 'errorXPD', 'Error X PD')
+    plotOneData(data_arrays[10][1], data_arrays[10][2], 'Error Y PD', 'Time (s)', 'Value', 'errorYPD', 'Error Y PD')
 
 
 

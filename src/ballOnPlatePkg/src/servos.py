@@ -13,6 +13,8 @@ from plots import plotTwoAxis, saveArray
 
 class servos: 
     def __init__(self): 
+        rospy.init_node('Servo', anonymous=True)
+        self.start_time = rospy.Time.now() 
         self.pwm = Adafruit_PCA9685.PCA9685(address=0x40, busnum=2)
         self.pwm.set_pwm_freq(60)
         self.pwm.set_pwm(0, 0, 375)
@@ -29,14 +31,13 @@ class servos:
         self.pwm.set_pwm(servoNo, randVal, pwmVal)
     
     def initNode(self): 
-        rospy.init_node('Servo', anonymous=True)
-        self.start_time = rospy.Time.now()
+
         self.sub = rospy.Subscriber('servoData', Float32MultiArray, callback=self.callback)
         self.rate = rospy.Rate(240)
     
     
     def callback(self, msg):
-        self.current_time = (rospy.Time.now() - self.start_time).to_sec()
+        self.current_time = (rospy.Time.now() - self.start_time).to_sec() #time.time() - self.start_time
         self.timeSeries = np.append(self.timeSeries, self.current_time)
         self.datauxPlot = np.append(self.datauxPlot, msg.data[0])
         self.datauyPlot = np.append(self.datauyPlot, msg.data[1])
@@ -46,6 +47,7 @@ class servos:
         self.dataServoYPlot = np.append(self.dataServoYPlot, self.uy)
         self.pwm.set_pwm(0, 0, self.ux)
         self.pwm.set_pwm(1, 0, self.uy)
+
 
     def runNode(self):
         try: 

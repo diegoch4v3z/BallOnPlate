@@ -14,6 +14,8 @@ from constants import Constants
 
 class touchScreen: 
     def __init__(self): 
+        rospy.init_node('Touchscreen', anonymous=True)
+        self.start_time = rospy.Time.now() 
         self.dataXPlot = np.array([])
         self.dataYPlot = np.array([])
         self.timeSeries = np.array([])
@@ -32,14 +34,14 @@ class touchScreen:
 
 
     def initNode(self, idVendor = 0x04d8, idProduct = 0x0c02):
-        rospy.init_node('Touchscreen', anonymous=True)
-        self.start_time = rospy.Time.now()
+        
         print('Initializing touchscreen...')
         dev = usb.core.find(idVendor = idVendor, idProduct = idProduct)
         ep_in = dev[0].interfaces()[0].endpoints()[0]
         ep_out = dev[0].interfaces()[0].endpoints()[1]
         intf = dev[0].interfaces()[0].bInterfaceNumber
         dev.reset()
+        
 
         if dev is None: 
             raise ValueError('Device not found')
@@ -71,9 +73,10 @@ class touchScreen:
         return [X_coordinate, Y_coordinate]
     
     def runNode(self):
+
         try:
             while not rospy.is_shutdown():
-                self.current_time = (rospy.Time.now() - self.start_time).to_sec()#(rospy.Time.now() - self.start_time).to_sec()
+                self.current_time = (rospy.Time.now() - self.start_time).to_sec() #(time.time() - self.start_time)#(rospy.Time.now() - self.start_time).to_sec()
                 self.timeSeries = np.append(self.timeSeries, self.current_time)
                 data = Float32MultiArray()
                 coordinate = self.getData(self.dev, self.ep_in, self.ep_out)

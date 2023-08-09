@@ -12,7 +12,7 @@ from constants import Constants
 from plots import plotTwoAxis, saveArray
 
 class PIDClass: 
-    def __init__(self): 
+    def __init__(self):
         self.x = 0
         self.y = 0
 
@@ -21,16 +21,21 @@ class PIDClass:
         self.kPID = c.PIDConstants()
 
         ## 
-        self.Ix = np.array([0, 0])
-        self.Iy = np.array([0, 0])
-        self.SP = np.array([0, 0])
-        self.Ux = np.array([0, 0])
-        self.Uy = np.array([0, 0])
-        self.IxPlot = np.array([0, 0])
-        self.IyPlot = np.array([0, 0])
-        self.xPlot = np.array([0, 0])
-        self.yPlot = np.array([0, 0])
-        self.timeSeries = np.array([0, 0])
+        delayDt = 2
+        self.Ix = np.zeros(delayDt)
+        self.Iy = np.zeros(delayDt)
+        self.SP = np.zeros(delayDt)
+        self.Ux = np.zeros(delayDt)
+        self.Uy = np.zeros(delayDt)
+        self.IxPlot = np.zeros(delayDt)
+        self.IyPlot = np.zeros(delayDt)
+        self.xPlot = np.zeros(delayDt)
+        self.yPlot = np.zeros(delayDt)
+        self.timeSeries = np.zeros(delayDt)
+        self.dErrxPlot = np.zeros(delayDt)
+        self.dErryPlot = np.zeros(delayDt)
+        self.pErrxPlot = np.zeros(delayDt)
+        self.pErryPlot = np.zeros(delayDt)
 
 
     def initNode(self): 
@@ -39,6 +44,7 @@ class PIDClass:
         self.sub = rospy.Subscriber('touchscreenData', Float32MultiArray, callback=self.callback)
         self.pubServo = rospy.Publisher('servoData', Float32MultiArray, queue_size=10)
         self.start_time = rospy.Time.now()
+        
     def runNode(self):
         try: 
             while not rospy.is_shutdown(): 
@@ -47,7 +53,7 @@ class PIDClass:
             pass 
 
     def callback(self, msg): 
-        self.current_time = (rospy.Time.now() - self.start_time).to_sec() #(rospy.Time.now() - self.start_time).to_sec()
+        self.current_time = (rospy.Time.now() - self.start_time).to_sec() #(time.time() - self.start_time) #
         self.timeSeries = np.append(self.timeSeries, self.current_time)
 
         self.x = msg.data[0]                                            # Obtain data X from the touchscreen rospy
@@ -57,17 +63,27 @@ class PIDClass:
         self.xPlot = np.append(self.xPlot, self.x)
         self.yPlot = np.append(self.yPlot, self.y)
         self.SP = np.append(self.SP, self.kPID[6])                      # Add set point continously
-        if len(self.Ix) > self.kPID[7] and len(self.Iy) > self.kPID[7]: 
+        if len(self.Ix) > self.kPID[7] and len(self.Iy) > self.kPID[7]:
+            #self.Ix, self.Iy = self.movingAverage(self.Ix, self.Iy, self.kPID[7],self.kPID[8])
             self.xyFiltered = self.movingAverage(self.Ix, self.Iy, self.kPID[7],self.kPID[8])
             self.Ix[-1] = self.xyFiltered[0]
             self.Iy[-1] = self.xyFiltered[1]
         ## Add filtered values to plot 
         self.IxPlot = np.append(self.IxPlot, self.Ix[-1])
         self.IyPlot = np.append(self.IyPlot, self.Iy[-1])
-        ux = self.pidFunction(self.SP[-1],self.Ix[-1], self.Ix[-2], self.kPID[9], self.kPID[10],
+        # ux, dErrx, pErrx = self.pidFunction(self.SP[-1],self.Ix[-1], self.Ix[-2], self.kPID[9], self.kPID[10],
+        #                       self.kPID[2], self.kPID[1], self.kPID[0])
+        # uy, dErry, pErry = self.pidFunction(self.SP[-1],self.Iy[-1], self.Iy[-2], self.kPID[9], self.kPID[10],
+        #                       self.kPID[5], self.kPID[4], self.kPID[3])
+        
+        ux, dErrx, pErrx = self.pidFunction(self.SP[-1],self.Ix[-1], self.Ix[-2], self.kPID[9], self.kPID[10],
                               self.kPID[2], self.kPID[1], self.kPID[0])
-        uy = self.pidFunction(self.SP[-1],self.Iy[-1], self.Iy[-2], self.kPID[9], self.kPID[10],
+        uy, dErry, pErry = self.pidFunction(self.SP[-1],self.Iy[-1], self.Iy[-2], self.kPID[9], self.kPID[10],
                               self.kPID[5], self.kPID[4], self.kPID[3])
+        self.dErrxPlot = np.append(self.dErrxPlot, dErrx)
+        self.dErryPlot = np.append(self.dErryPlot, dErry)
+        self.pErrxPlot = np.append(self.pErrxPlot, pErrx)
+        self.pErryPlot = np.append(self.pErryPlot, pErry)
         self.Ux = np.append(self.Ux, ux)
         self.Uy = np.append(self.Uy, uy)
         servoData = Float32MultiArray()
@@ -79,19 +95,23 @@ class PIDClass:
         kernel = np.ones(kernelSize)/kernelSize
         dataConvolvedX = np.convolve(Ix[-kernelSize:], kernel, mode = 'same')
         dataConvolvedY = np.convolve(Iy[-kernelSize:], kernel, mode = 'same')
+        # Ix[-1] = np.sum(Ix[-kernelSize:])/kernelSize
+        # Iy[-1] = np.sum(Iy[-kernelSize:])/kernelSize
         x = dataConvolvedX[kernelDelay]
         y = dataConvolvedY[kernelDelay]
-        return [x, y]
+        return [x, y] #Ix, Iy 
     def pidFunction(self, sp, cv, pv, iErr, dt, kD, kI, kP): 
         # K values 
         error = sp-pv 
         iErr = iErr + kI*error*dt
         dErr = (cv - pv)/dt 
         u = kP*error + kI*iErr - kD*dErr
-        return u 
+        return u, dErr, error
     def closeNode(self):
         saveArray(self.IxPlot, self.IyPlot, self.timeSeries, 'touchScreenReadingPD')
         saveArray(self.Ux, self.Uy, self.timeSeries, 'controlPD')
+        saveArray(self.dErrxPlot, self.dErryPlot, self.timeSeries, 'derivativePD')
+        saveArray(self.pErrxPlot, self.pErryPlot, self.timeSeries, 'errorPD')
         # saveArray(self.xPlot, self.yPlot, self.timeSeries, 'touchScreenRawData')
 
 if __name__ == '__main__':

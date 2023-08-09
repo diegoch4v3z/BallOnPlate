@@ -17,6 +17,13 @@
         output = 'screen'
     ></node>
 
+    <node 
+        pkg = 'ballOnPlatePkg'
+        type = 'PIDNengo.py'
+        name = 'PIDNengo'
+        output = 'screen'
+    ></node>
+
     <node
         pkg = 'ballOnPlatePkg'
         type = 'PID.py'
@@ -24,12 +31,6 @@
         output = 'screen'
     ></node>
 
-    <node 
-        pkg = 'ballOnPlatePkg'
-        type = 'PIDNengo.py'
-        name = 'PIDNengo'
-        output = 'screen'
-    ></node>
 
 
 </launch>
