@@ -152,8 +152,8 @@ def loadArray():
     plotOneData(data_arrays[7][1], data_arrays[7][2], 'Derivative Y PD', 'Time (s)', 'Value', 'derivativeYPD', 'Derivative Y PD', limit = True, lim=[-1,1])
     plotOneData(data_arrays[10][0], data_arrays[10][2], 'Error X PD', 'Time (s)', 'Value', 'errorXPD', 'Error X PD')
     plotOneData(data_arrays[10][1], data_arrays[10][2], 'Error Y PD', 'Time (s)', 'Value', 'errorYPD', 'Error Y PD')
-
-
+    plotOneData(data_arrays[5][0], data_arrays[5][2], 'SetPoint X', 'Time (s)', 'Value', 'setPointXNengo', 'Setpoint X Nengo')
+    plotOneData(data_arrays[5][1], data_arrays[5][2], 'SetPoint Y', 'Time (s)', 'Value', 'setPointYNengo', 'Setpoint Y Nengo')
 
 if __name__ == '__main__':
     loadArray()

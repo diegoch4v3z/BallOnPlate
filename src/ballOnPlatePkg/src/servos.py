@@ -41,6 +41,7 @@ class servos:
         self.timeSeries = np.append(self.timeSeries, self.current_time)
         self.datauxPlot = np.append(self.datauxPlot, msg.data[0])
         self.datauyPlot = np.append(self.datauyPlot, msg.data[1])
+        self.uy = self.mappingUy(msg.data[1])
         self.ux = self.mappingUx(msg.data[0])
         self.uy = self.mappingUy(msg.data[1])
         self.dataServoXPlot = np.append(self.dataServoXPlot, self.ux)

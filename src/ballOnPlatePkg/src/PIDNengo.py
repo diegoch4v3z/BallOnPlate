@@ -39,7 +39,8 @@ class PIDNengo:
         self.buildNengoModel(probe = True)
     def buildNengoModel(self, probe = False): 
         self.model = nengo.Network(label='PID', seed=1)
-
+            
+        NType= nengo.LIF()
         dt = 0.005
         delayX = DelayX(1, timesteps=int(0.05 / 0.005))
         delayY = DelayY(1, timesteps=int(0.05 / 0.005))
@@ -47,6 +48,8 @@ class PIDNengo:
             # Nodes
             self.PIDNengoNode = touchScreenCoordinates()
             posXY_node = nengo.Node(self.PIDNengoNode, size_out=2, size_in=2)
+            r = 0.20
+            #Reference_Signals = nengo.Node(lambda t: [0,r*np.cos(0.1*t)])
             setpoint = nengo.Node([0, 0])
         
 
@@ -55,16 +58,18 @@ class PIDNengo:
 
             #Ensembles
             posXY_ensemble = nengo.Ensemble(n_neurons=1, dimensions=2, neuron_type=nengo.Direct(), radius=2)
-            setPointEnsemble = nengo.Ensemble(n_neurons=400, dimensions=2, radius =0.001)
-            errorX = nengo.Ensemble(n_neurons=400, dimensions=1, radius=2)
-            errorY = nengo.Ensemble(n_neurons=400, dimensions=1, radius=2)
+            setPointEnsemble = nengo.Ensemble(n_neurons=400, dimensions=2, radius = 0.001, neuron_type=NType)
+            #biasNode = nengo.Node([0.01, 0.01])
+            errorX = nengo.Ensemble(n_neurons=400, dimensions=1, radius=2, neuron_type=NType)
+            errorY = nengo.Ensemble(n_neurons=400, dimensions=1, radius=2, neuron_type=NType)
 
-            d_e_x = nengo.Ensemble(n_neurons=800, dimensions = 1, radius=1)
-            d_e_y = nengo.Ensemble(n_neurons=800, dimensions = 1, radius=1)
+            d_e_x = nengo.Ensemble(n_neurons=800, dimensions = 1, radius=0.5, neuron_type=NType)#radius=1)
+            d_e_y = nengo.Ensemble(n_neurons=800, dimensions = 1, radius=1, neuron_type=NType)
 
-            u = nengo.Ensemble(n_neurons=1, dimensions=2, neuron_type=nengo.Direct(), radius=3)
+            u = nengo.Ensemble(n_neurons=1, dimensions=2, neuron_type=nengo.Direct(), radius=1)
 
-            
+            # nengo.Connection(biasNode[0], errorX, synapse=None)
+            # nengo.Connection(biasNode[1], errorY, synapse=None)
             
 
             # Conections 
@@ -93,7 +98,7 @@ class PIDNengo:
             nengo.Connection(d_e_y, u[1], transform=self.kPID[5])
 
             
-            nengo.Connection(u, posXY_node, synapse=0.005)
+            nengo.Connection(u, posXY_node, synapse=0.03)#0.05)#synapse=0.005)
             if probe: 
                 self.probesPosXYEnsemble = nengo.Probe(posXY_ensemble)
                 self.probesSetPointEnsemble = nengo.Probe(setPointEnsemble, synapse=0.1)
@@ -102,6 +107,7 @@ class PIDNengo:
                 self.probesd_e_x = nengo.Probe(d_e_x, synapse=0.1)
                 self.probesd_e_y = nengo.Probe(d_e_y, synapse=0.1)
                 self.probesu = nengo.Probe(u, synapse=0.1)
+                
         
         
     def runNode(self): 
@@ -194,10 +200,14 @@ class runModel:
         self.start_time = rospy.Time.now()
         try:
             #if pop:
-            for i in range(8000): 
+            for i in range(16000): 
                 self.current_time = (rospy.Time.now() - self.start_time).to_sec() #(time.time() - self.start_time) #(rospy.Time.now() - self.start_time).to_sec()
                 self.timeSeries = np.append(self.timeSeries, self.current_time)
                 sim.step()
+                if i % 2000 == 0:
+                    print('RESET Done')
+                    sim.reset()
+                    #sim.clear_probes()
                 pop = False
                 # tik = time.time()
                 # tok = time.time()

@@ -24,7 +24,8 @@ class PIDClass:
         delayDt = 2
         self.Ix = np.zeros(delayDt)
         self.Iy = np.zeros(delayDt)
-        self.SP = np.zeros(delayDt)
+        self.SPx= np.zeros(delayDt)
+        self.SPy = np.zeros(delayDt)
         self.Ux = np.zeros(delayDt)
         self.Uy = np.zeros(delayDt)
         self.IxPlot = np.zeros(delayDt)
@@ -62,7 +63,17 @@ class PIDClass:
         self.Iy = np.append(self.Iy, self.y)
         self.xPlot = np.append(self.xPlot, self.x)
         self.yPlot = np.append(self.yPlot, self.y)
-        self.SP = np.append(self.SP, self.kPID[6])                      # Add set point continously
+
+        #self.SP = np.append(self.SP, self.kPID[6])  
+        # r = 0.1
+        # #function = lambda t: r*np.cos(0.1*t)
+        # functionx = r*np.cos(1.0*self.current_time)
+        # functiony = r*np.sin(1.0*self.current_time)
+
+
+       
+        self.SPx = np.append(self.SPx, 0)                    # Add set point continously
+        self.SPy = np.append(self.SPy, 0) 
         if len(self.Ix) > self.kPID[7] and len(self.Iy) > self.kPID[7]:
             #self.Ix, self.Iy = self.movingAverage(self.Ix, self.Iy, self.kPID[7],self.kPID[8])
             self.xyFiltered = self.movingAverage(self.Ix, self.Iy, self.kPID[7],self.kPID[8])
@@ -71,14 +82,16 @@ class PIDClass:
         ## Add filtered values to plot 
         self.IxPlot = np.append(self.IxPlot, self.Ix[-1])
         self.IyPlot = np.append(self.IyPlot, self.Iy[-1])
+        #print(self.Ix[-1], self.Iy[-1])
+        
         # ux, dErrx, pErrx = self.pidFunction(self.SP[-1],self.Ix[-1], self.Ix[-2], self.kPID[9], self.kPID[10],
         #                       self.kPID[2], self.kPID[1], self.kPID[0])
         # uy, dErry, pErry = self.pidFunction(self.SP[-1],self.Iy[-1], self.Iy[-2], self.kPID[9], self.kPID[10],
         #                       self.kPID[5], self.kPID[4], self.kPID[3])
         
-        ux, dErrx, pErrx = self.pidFunction(self.SP[-1],self.Ix[-1], self.Ix[-2], self.kPID[9], self.kPID[10],
+        ux, dErrx, pErrx = self.pidFunction(self.SPx[-1],self.Ix[-1], self.Ix[-2], self.kPID[9], self.kPID[10],
                               self.kPID[2], self.kPID[1], self.kPID[0])
-        uy, dErry, pErry = self.pidFunction(self.SP[-1],self.Iy[-1], self.Iy[-2], self.kPID[9], self.kPID[10],
+        uy, dErry, pErry = self.pidFunction(self.SPy[-1],self.Iy[-1], self.Iy[-2], self.kPID[9], self.kPID[10],
                               self.kPID[5], self.kPID[4], self.kPID[3])
         self.dErrxPlot = np.append(self.dErrxPlot, dErrx)
         self.dErryPlot = np.append(self.dErryPlot, dErry)
@@ -88,7 +101,7 @@ class PIDClass:
         self.Uy = np.append(self.Uy, uy)
         servoData = Float32MultiArray()
         servoData.data = [ux, uy]
-        #self.pubServo.publish(servoData)
+        self.pubServo.publish(servoData)
         self.rate.sleep()
         
     def movingAverage(self, Ix, Iy, kernelSize, kernelDelay): 

@@ -61,11 +61,13 @@ class touchScreen:
     
     def getData(self, dev, ep_in, ep_out): 
         screen_x_lim_up = 1870
-        screen_x_lim_down = 1917
+        screen_x_lim_down = 2200#1991
         screen_y_lim_up = 3920
-        screen_y_lim_down = 1666
+        screen_y_lim_down = 1995
         try: 
             data = dev.read(ep_in.bEndpointAddress, ep_in.wMaxPacketSize) #Collected data from the touchscreen
+            # X_coordinate = (((data[2] - 10)*256 + data[1])*-1)/(screen_x_lim_down)
+            # Y_coordinate = (((data[4] - 7)*256 + data[3])*-1)/(screen_y_lim_down)
             X_coordinate = (((data[2] - 8)*256 + data[1])*-1)/(screen_x_lim_down)
             Y_coordinate = (((data[4] - 8)*256 + data[3])*-1)/(screen_y_lim_down)
         except usb.core.USBError as e: 
