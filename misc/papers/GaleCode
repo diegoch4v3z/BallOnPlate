@@ -1,0 +1,211 @@
+import numpy as np
+import cvxpy as cp
+import control as ct
+import scipy.linalg as sla
+from scipy.integrate import solve_ivp
+from numpy.linalg import inv
+from numpy.linalg import eigvals as eig
+import matplotlib.pyplot as plt
+plt.close("all")
+
+
+# A magnitude and rate saturation model and its use in the solution of a static
+# anti-windup problem
+# S. Galeani, S. Onori, A.R. Teel, L. Zaccarian
+# Systems and control letters 2008
+
+def sat(u,umax):
+    umin=-umax
+    return np.sort([umin,u,umax])[1]
+
+n=2
+m=1
+p=1
+
+
+Ap=np.array([[0,1],[0,0]])
+Bp=np.array([[0],[-5/7*9.81]])
+Bpw=Bp
+
+Cpy=np.array([[1,0]])
+Dpy=np.zeros((p,m))
+Dpw=np.zeros((p,m))
+
+Cpz=np.eye((n))
+Dpz=np.zeros((n,m))
+Dpzw=np.zeros((n,m))
+
+bAp=np.vstack((np.hstack((Ap,np.zeros((n,m)))),np.zeros((m,n+m))))
+bBpu=np.vstack((np.hstack((Bp,np.zeros((n,m)))),
+                np.hstack((np.zeros((m,m)),np.eye(m)))))
+bBpw=np.vstack((Bpw,np.zeros((m,m))))
+
+bCpy=np.vstack((np.hstack((Cpy,np.zeros((p,m)))),
+                np.hstack((np.zeros((m,n)),np.eye(m)))))
+bDpy=np.vstack((np.hstack((Dpy,np.zeros((p,m)))),np.zeros((m,m+m))))
+bDpw=np.vstack((Dpw,np.zeros((m,m))))
+
+bCpz=np.hstack((Cpz,np.zeros((n,m))))
+bDpz=np.hstack((Dpz,np.zeros((n,m))))
+bDpzw=Dpzw
+
+# Kx=np.array([[1.143,1.2]])
+
+Qc=np.diag([100,0.01])
+Rc=np.eye(p)/100
+Lc,Sc,Ec=ct.lqr(Ap,Bp,Qc,Rc)
+Kx=-Lc
+
+Qo=np.eye(n)*100
+Ro=np.eye(p)/100
+Lo,So,Eo=ct.lqr(Ap.T,Cpy.T,Qo,Ro)
+Lx=-Lo.T
+
+Ac=Ap+Bp@Kx+Lx@Cpy
+Bc=-Lx
+Bcw=np.zeros((2,1))
+Cc=Kx
+
+
+K=np.array([[1000]])
+
+bAc=Ac
+bBc=np.hstack((Bc,np.zeros((n,m))))
+bBcw=Bcw
+
+bCc=np.vstack((np.zeros((m,n)),K@Cc+Cc@Ac))
+bDc=np.vstack((np.hstack((np.zeros((m,p)),np.eye(m))),
+               np.hstack((Cc@Bc,-K))))
+bDcw=np.vstack((np.zeros((1,1)),Cc@Bcw))
+bDcv2=np.vstack((np.zeros((1,m)),np.eye(1)))
+
+bDelu=np.linalg.inv(np.eye(2)-bDc@bDpy)
+bDely=np.linalg.inv(np.eye(2)-bDpy@bDc)
+
+A=np.vstack((np.hstack((bAp+bBpu@bDelu@bDc@bCpy,bBpu@bDelu@bCc)),
+             np.hstack((bBc@bDely@bCpy,bAc+bBc@bDpy@bDelu@bCc))))
+Cy=np.hstack((bDelu@bDc@bCpy,bDelu@bCc))
+Cz=np.hstack((bCpz+bDpz@bDelu@bDc@bCpy,bDpz@bDelu@bCc))
+
+Bq=np.vstack((-bBpu@bDelu,-bBc@bDely@bDpy))
+Bw=np.vstack((bBpw+bBpu@bDelu@(bDcw+bDc@bDpw),bBcw+bBc@bDely@(bDpw+bDpy@bDcw)))
+BL=np.vstack((np.hstack((np.zeros((n+m,2)), bBpu@bDelu@bDcv2)),
+              np.hstack((np.eye(2),bBc@bDely@bDpy@bDcv2))))
+Dyq=-bDelu@bDc@bDpy
+Dyw=bDelu@(bDcw+bDc@bDpw)
+DyL=np.hstack((np.zeros((n,n)),bDelu@bDcv2))
+Dzq=-bDpz@bDelu
+Dzw=bDpzw+bDpz@bDelu@(bDcw+bDc@bDpw)
+DzL=np.hstack((np.zeros((n,n)),bDpz@bDelu@bDcv2))
+
+eps=1e-7
+s2=np.array([[0.0001]])
+b=np.array([0.0871,7.97])
+
+constraints = []
+
+Q = cp.Variable((n+3*m,n+3*m),PSD=True)
+U = cp.diag(cp.Variable((2*m ,1),pos=True))
+Y = cp.Variable((2*m,n+3*m))
+X = cp.Variable((n+m,2*m))
+gam2=cp.Variable((1,1),pos=True)
+
+LMI1a=cp.vstack((cp.hstack((A@Q,Bq@U+BL@X,Bw,np.zeros((2*n+m,n)))),
+                  cp.hstack((Cy@Q-Y,Dyq@U-U+DyL@X,Dyw,np.zeros((n,n)))),
+                  cp.hstack((np.zeros((1,2*n+m)),np.zeros((1,2*m)),-1/2*np.eye(1),np.zeros((1,n)))),
+                  cp.hstack((Cz@Q,Dzq@U+DzL@X,Dzw,-gam2/2*np.eye(n)))))
+
+
+LMI1=-LMI1a-LMI1a.T
+
+constraints.append(cp.lambda_min(LMI1-eps*np.eye(2*n+m+2*m+m+n)) >= 0)
+
+LMI2={}
+for i in range(2*m):
+    LMI2[i]=cp.vstack((cp.hstack((b[i]**2/s2,cp.reshape(Y[i,:],(1,2*n+m)))),
+                        cp.hstack((cp.reshape(Y[i,:],(2*n+m,1)),Q))))
+    constraints.append(cp.lambda_min(LMI2[i]) >= 0)
+
+
+obj = cp.Minimize(gam2)
+prob = cp.Problem(obj, constraints)
+
+# prob.solve(verbose=False, solver='CVXOPT')
+prob.solve(verbose=False, solver='MOSEK')
+print(prob.status)
+if prob.status == 'optimal':
+    print(np.sqrt(gam2.value))
+    
+L=X.value@inv(U.value)
+print(L)
+
+def dist(t):
+    if (t>20) and (t<25):
+        return -0.085
+    else:
+        return 0
+    
+def syssat(t,X):
+    x=X[:n].reshape(2,1)
+    xob=X[n:n+n].reshape(2,1)
+    d=X[n+n]
+    
+    # dx=Ap@x+Bp@u
+    yp=Cpy@x
+    
+    # dxob=Ac@xob+Bc@yp+v1
+    yc=Cc@xob
+    ycdot=Cc@(Ac@xob+Bc@yp)
+
+    # Ojo al Lazo Algebraico    
+    nu=L[2,0]*(d-sat(d,b[0]))+ycdot+K*(yc-d)
+    if (np.abs(nu)>b[1]):
+        nu=(nu-b[1]*np.sign(nu))/(1-L[2,1])
+    
+    vt=L@np.vstack((d-sat(d,b[0]),nu-sat(nu[0][0],b[1])))
+    v1=vt[:n,:]
+    # v2=vt[n,:]
+    
+    u=sat(d,b[0])
+    if np.abs(u)>b[0]:
+        print('sat u!!!')
+    dd=sat(nu[0][0],b[1])
+    dx=Ap@x+Bp*(u+dist(t))
+    dxob=Ac@xob+Bc@yp+v1
+    return np.vstack((dx,dxob,dd)).flatten()
+
+sol = solve_ivp(syssat, [0,30], [0.1,0,0,0,0])
+
+
+solt=sol.t
+soly=sol.y
+
+#%%
+plt.close("all")
+plt.figure(0)
+plt.plot(solt,soly[0,:])
+plt.plot([solt[0],solt[-1]],[0,0],'k')
+plt.plot(solt,soly[2,:])
+plt.grid()
+
+plt.figure(1)
+plt.plot(solt,soly[1,:])
+plt.plot(solt,soly[3,:])
+plt.grid()
+
+plt.figure(2)
+plt.plot([solt[0],solt[-1]],[b[0],b[0]],'k')
+plt.plot([solt[0],solt[-1]],[-b[0],-b[0]],'k')
+plt.plot(solt,soly[4,:])
+usat=list(map(lambda i: sat(i,b[0]),soly[4,:]))
+plt.plot(solt,usat)
+plt.grid()
+
+plt.figure(3)
+plt.plot([solt[0],solt[-1]],[b[1],b[1]],'k')
+plt.plot([solt[0],solt[-1]],[-b[1],-b[1]],'k')
+dd=np.diff(usat)/np.diff(solt)
+plt.plot(solt[1:],dd)
+ddsat=list(map(lambda i: sat(i,b[1]),dd))
+plt.plot(solt[1:],ddsat)
+plt.grid()
