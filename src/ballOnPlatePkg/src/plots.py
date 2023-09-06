@@ -119,6 +119,15 @@ def saveArray2(data1, data2, timestamp, filename):
     np.save(array_path, stacked_array)
     np.savetxt(arrayCSV_path, stacked_array, delimiter=',' )
 
+def saveArrayLQR(data1, data2, timestamp, filename): 
+    import os
+    os.chdir('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/savedArrayLQR')
+    folder_path = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/savedArrayLQR'
+    array_path = os.path.join(folder_path, f'{filename}.npy')
+    arrayCSV_path = os.path.join(folder_path, f'{filename}.csv')
+    stacked_array = np.vstack((data1, data2, timestamp))
+    np.save(array_path, stacked_array)
+    np.savetxt(arrayCSV_path, stacked_array, delimiter=',' )
 
 def loadArray(): 
     current_dir = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/savedArrays'
@@ -129,6 +138,48 @@ def loadArray():
         file_path = os.path.join(current_dir, file)
         loaded_data = np.load(file_path, allow_pickle=True)
         data_arrays.append(loaded_data)
+
+def plotOneDataLQR(data0, timestamp0, title, xLabel, yLabel, figureName, label1, limit = False, lim=[0,0]):
+    plt.figure()
+    plt.plot(timestamp0, data0, label=label1)
+    plt.grid()
+    plt.title(title)
+    plt.xlabel(xLabel)
+    plt.ylabel(yLabel)
+    plt.legend()
+    if limit: 
+        plt.ylim(lim)
+    current_dir = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/plotsLQR'
+    folder_path = os.path.join(current_dir, 'plots')
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    figure_path = os.path.join(folder_path, f'{figureName}.png')
+    plt.tight_layout()
+    plt.savefig(figure_path, dpi=300)
+    plt.close()
+
+def plotLQR(): 
+    controlSignalData = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/savedArrayLQR/controlSignalData.npy')
+    fcxData = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/savedArrayLQR/fcxNengo.npy')
+    fcyData = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/savedArrayLQR/fcyNengo.npy')
+    #servoSignalData = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/savedArrays/servoSignalData.npy')
+    touchScreenReadingRawData = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/savedArrayLQR/touchScreenReadingRaw.npy')
+    
+    
+    print(np.shape(fcxData[0][:]))
+    plotOneDataLQR(fcxData[0][:], fcxData[2][:], 'FCX_Position', 'Time (s)', 'Value', 'FCX_Position', 'FCXNengo')
+    plotOneDataLQR(fcxData[1][:], fcxData[2][:], 'FCX_Velocity', 'Time (s)', 'Value', 'FCX_Velocity', 'FCXNengo')
+    plotOneDataLQR(fcyData[0][:], fcyData[2][:], 'FCY_Position', 'Time (s)', 'Value', 'FCY_Position', 'FCYNengo')
+    plotOneDataLQR(fcyData[1][:], fcyData[2][:], 'FCY_Velocity', 'Time (s)', 'Value', 'FCY_Velocity', 'FCYNengo')
+    plotOneDataLQR(controlSignalData[0][:], controlSignalData[2][:], 'controlSignalX', 'Time (s)', 'Value', 'controlSignalX', 'controlSignalX')
+    plotOneDataLQR(controlSignalData[1][:], controlSignalData[2][:], 'controlSignalY', 'Time (s)', 'Value', 'controlSignalY', 'controlSignalY')
+    plotOneDataLQR(touchScreenReadingRawData[0][:], touchScreenReadingRawData[2][:], 'RawSignalX', 'Time (s)', 'Value', 'RawSignalX', 'RawSignalX')
+    plotOneDataLQR(touchScreenReadingRawData[1][:], touchScreenReadingRawData[2][:], 'RawSignalY', 'Time (s)', 'Value', 'RawSignalY', 'RawSignalY')
+
+#     plotOneData(data_arrays[8][0], data_arrays[8][1], 'Derivative Y-Axis Nengo', 'Time (s)', 'Value', 'derivativeYNengo', 'Derivative Y')
+#     plotOneData(data_arrays[1][0], data_arrays[1][1], 'Error Nengo Y', 'Time (s)', 'Value', 'errorNengoY', 'Y')
+#     plotOneData(data_arrays[2][0], data_arrays[2][1], 'Error Nengo X', 'Time (s)', 'Value', 'errorNengoX', 'X')
+
     
 def plotCCE(): 
     touschreenReadingRaw = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/savedArrays/touchScreenReadingRaw.npy')
@@ -234,4 +285,4 @@ def plotCCE():
 #     plotOneData(data_arrays[5][1], data_arrays[5][2], 'SetPoint Y', 'Time (s)', 'Value', 'setPointYNengo', 'Setpoint Y Nengo')
 
 if __name__ == '__main__':
-    plotCCE()
+    plotLQR()

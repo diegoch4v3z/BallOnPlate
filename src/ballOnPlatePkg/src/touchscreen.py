@@ -9,8 +9,10 @@ import usb.core, usb.util
 import numpy as np
 import rospy
 from std_msgs.msg import Float32MultiArray
-from plots import plotTwoAxis, saveArray, saveArray2
+from plots import plotTwoAxis, saveArray, saveArray2, saveArrayLQR
 from constants import Constants
+
+
 
 class touchScreen: 
     def __init__(self): 
@@ -110,8 +112,8 @@ class touchScreen:
                 self.pub.publish(data)
                 self.rate.sleep()
             if self.plot: 
-                saveArray2(self.dataXPlot, self.dataYPlot, self.timeSeries, 'touchScreenReadingRaw')#, 'TouchScreen Reading', 'Time (s)', 'Coordinate Position', 'touchScreenData', 'X-Axis', 'Y-Axis', limit=True) 
-                saveArray2(self.dataXPlotFiltered, self.dataYPlotFiltered, self.timeSeries[:len(self.dataXPlotFiltered)], 'touchScreenReadingFiltered')
+                saveArrayLQR(self.dataXPlot, self.dataYPlot, self.timeSeries, 'touchScreenReadingRaw')#, 'TouchScreen Reading', 'Time (s)', 'Coordinate Position', 'touchScreenData', 'X-Axis', 'Y-Axis', limit=True) 
+                saveArrayLQR(self.dataXPlotFiltered, self.dataYPlotFiltered, self.timeSeries[:len(self.dataXPlotFiltered)], 'touchScreenReadingFiltered')
         except rospy.ROSInterruptException: 
             pass
 if __name__ == '__main__':

@@ -8,12 +8,12 @@ import nengo, rospy, sys
 import matplotlib.pyplot as plt 
 from constants import Constants
 from std_msgs.msg import Float32MultiArray
-from plots import plotTwoAxis, saveArray, saveArray1
+from plots import plotTwoAxis, saveArray, saveArray1, saveArrayLQR
 import numpy as np
 import scipy, datetime, time
 import message_filters
 #import control as ct
-
+import os
 
 pop = True
 class DelayX: 
@@ -38,7 +38,7 @@ class LQRNengo:
         c = Constants()
         self.kPID = c.PIDNengoConstants()
         self.i = 0
-        self.buildNengoModel(probe = False)
+        self.buildNengoModel(probe = True)
     def buildNengoModel(self, probe = False): 
         
         # Constants 
@@ -46,7 +46,7 @@ class LQRNengo:
         gravity = 9.81
         t_synapse = 0.2
         r = 0.1
-        radC=0.05
+        radC=0.1
 
         Ap=np.array([[0,1],[0,0]])
         Bp=np.array([[0],[-5/7*9.81]])
@@ -82,9 +82,19 @@ class LQRNengo:
         # Bc=np.array([[ 4.47224776],[10.]])
         # Cc=np.array([[1.41421356, 1.18475699]])
 
-        Ac=np.array([[-2.70639157,  1.        ], [-4.97151417, -6.02924874]])
-        Bc=np.array([[2.70639157],[3.16227766]])
-        Cc=np.array([[0.25819889, 0.86044325]])
+        Cc=np.array([[1.41421356, 1.18475699]])
+        Ac=np.array([[-12.77675832,   1.        ], [-41.53237306,  -8.3017615 ]])
+        Bc=np.array([[12.77675832], [31.6227766 ]])
+
+        # Ac=np.array([[-2.70639157,  1.        ], [-4.97151417, -6.02924874]])
+        # Bc=np.array([[2.70639157],[3.16227766]])
+        # Cc=np.array([[0.25819889, 0.86044325]])
+
+        # Ac=np.array([[ -2.70639157,   1.        ],[ -3.38386297, -22.16852906]])
+        # Bc=np.array([[2.70639157],[3.16227766]])
+        # Cc=np.array([[0.03162278, 3.16370445]])
+
+       
 
 
         # Network model
@@ -92,7 +102,6 @@ class LQRNengo:
         self.model = nengo.Network(label='PID', seed=1)
             
         NType= nengo.LIF()
-        dt = 0.005
         delayX = DelayX(1, timesteps=int(0.05 / 0.005))
         delayY = DelayY(1, timesteps=int(0.05 / 0.005))
         with self.model:
@@ -143,14 +152,14 @@ class LQRNengo:
             nengo.Connection(fcx,fcx,synapse = t_synapse,function=fc_fun) #Dinamica del controlador
 
             ycx=nengo.Node(output=control,size_in=2, size_out=1) #Nodo de salida del controlador
-            nengo.Connection(fcx,ycx,synapse = 0) #Salida del controlador
+            nengo.Connection(fcx,ycx,synapse = 0.01) #Salida del controlador
     
             gcy=nengo.Node(output=gc_fun,size_in=1, size_out=2) #Nodo de entrada del controlador
             nengo.Connection(gcy,fcy,synapse = t_synapse) #Entrada del controlador
             nengo.Connection(fcy,fcy,synapse = t_synapse,function=fc_fun)#Dinamica del controlador
     
             ycy=nengo.Node(output=control,size_in=2, size_out=1)#Nodo de salida del controlador
-            nengo.Connection(fcy,ycy,synapse = 0)#Salida del controlador
+            nengo.Connection(fcy,ycy,synapse = 0.01)#Salida del controlador
 
             RefX = nengo.Node(lambda t,x: reffunx(t),size_in=1, size_out=1)# Nodo de referencia para los plots
             RefY = nengo.Node(lambda t,x: reffuny(t),size_in=1, size_out=1)# Nodo de referencia para los plots
@@ -158,6 +167,8 @@ class LQRNengo:
             # Errores de posicion al controlador     
             ErrRefX = nengo.Node(lambda t,x: x-0,size_in=1, size_out=1) # Error de posicion
             ErrRefY = nengo.Node(lambda t,x: x-0,size_in=1, size_out=1) # Error de posicion
+
+    
 
             nengo.Connection(posXY_node[0],ErrRefX, synapse=0)
             nengo.Connection(posXY_node[1],ErrRefY, synapse=0)
@@ -171,10 +182,15 @@ class LQRNengo:
             nengo.Connection(ycy, ConvertY, synapse=0)
             
 
-            nengo.Connection(ConvertX, posXY_node[0], synapse=0, transform=-1)
-            nengo.Connection(ConvertY, posXY_node[1], synapse=0, transform=-1)
+            nengo.Connection(ConvertX, posXY_node[0], synapse=0.01, transform=-1)
+            nengo.Connection(ConvertY, posXY_node[1], synapse=0.01, transform=-1)
             if probe: 
-                print('Probing')
+                self.fcxProbe = nengo.Probe(fcx, synapse=0.01)
+                self.fcyProbe = nengo.Probe(fcy, synapse=0.01)
+                self.ErrRefXProbe = nengo.Probe(ErrRefX, synapse = 0.01)
+                self.ErrRefYProbe = nengo.Probe(ErrRefY, synapse = 0.01 )
+                
+                
                 
         
         
@@ -187,7 +203,7 @@ class LQRNengo:
     def get_model(self): 
         return self.model
     def get_probes(self): 
-        return [False]
+        return [self.fcxProbe, self.fcyProbe, self.ErrRefXProbe, self.ErrRefYProbe]
     
 
 class touchScreenCoordinates: 
@@ -246,10 +262,10 @@ class runModel:
         self.timeSeries = np.array([])
         p = LQRNengo()
         model = p.get_model()
-        sim = nengo.Simulator(model, dt=0.001, optimize=True)
+        sim = nengo.Simulator(model, dt=0.005, optimize=True)
         
         
-        #probes = p.get_probes()
+        probes = p.get_probes()
         self.start_time = rospy.Time.now()
         try:
             #if pop:
@@ -259,17 +275,19 @@ class runModel:
                 sim.step()
                 pop = False
             
-            # dataProbe0 = sim.data[probes[0]]
-            # dataProbe1 = sim.data[probes[1]]
-            # dataProbe2 = sim.data[probes[2]]
-            # dataProbe3 = sim.data[probes[3]]
+            dataProbe0 = sim.data[probes[0]]
+            dataProbe1 = sim.data[probes[1]]
+            dataProbe2 = sim.data[probes[2]]
+            dataProbe3 = sim.data[probes[3]]
             # dataProbe4 = sim.data[probes[4]]
             # dataProbe5 = sim.data[probes[5]]
             # dataProbe6 = sim.data[probes[6]]
         except SystemExit:
             pass
-        # saveArray(dataProbe0[:, 0], dataProbe0[:, 1], self.timeSeries, 'touchScreenReadingNengo')
-        # saveArray(dataProbe1[:, 0], dataProbe1[:, 1], self.timeSeries, 'setPointEnsembleNengo')
+        saveArrayLQR(dataProbe0[:, 0], dataProbe0[:, 1], self.timeSeries, 'fcxNengo')
+        saveArrayLQR(dataProbe1[:, 0], dataProbe1[:, 1], self.timeSeries, 'fcyNengo')
+        saveArrayLQR(dataProbe1[:, 0], dataProbe1[:, 1], self.timeSeries, 'ErrRefXProbe')
+        saveArrayLQR(dataProbe1[:, 0], dataProbe1[:, 1], self.timeSeries, 'ErrRefYProbe')
         # saveArray1(dataProbe2[:, 0], self.timeSeries, 'errorNengoX')
         # saveArray1(dataProbe3[:, 0], self.timeSeries, 'errorNengoY')
         # saveArray1(dataProbe4[:, 0], self.timeSeries, 'derivativeXNengo')
