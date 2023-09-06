@@ -46,7 +46,7 @@ class LQRNengo:
         gravity = 9.81
         t_synapse = 0.2
         r = 0.1
-        radC=0.7
+        radC=0.05
 
         Ap=np.array([[0,1],[0,0]])
         Bp=np.array([[0],[-5/7*9.81]])
@@ -69,18 +69,22 @@ class LQRNengo:
         # Ac=Ap+Bp@Kx+Lx@Cpy
         # Bc=-Lx
         # Cc=Kx
-        Ac=np.array([[ -4.47224776,   1.        ],
-                    [-11.80923651,  -2.29240951]])
+        # Ac=np.array([[ -4.47224776,   1.        ],
+        #             [-11.80923651,  -2.29240951]])
 
-        Bc=np.array([[ 4.47224776],
-                    [10.        ]])
+        # Bc=np.array([[ 4.47224776],
+        #             [10.        ]])
 
-        Cc=np.array([[0.25819889, 0.32715324]])
+        # Cc=np.array([[0.25819889, 0.32715324]])
 
 
         # Ac=np.array([[ -4.47224776,   1.],[-19.90959646,  -8.3017615 ]])
         # Bc=np.array([[ 4.47224776],[10.]])
         # Cc=np.array([[1.41421356, 1.18475699]])
+
+        Ac=np.array([[-2.70639157,  1.        ], [-4.97151417, -6.02924874]])
+        Bc=np.array([[2.70639157],[3.16227766]])
+        Cc=np.array([[0.25819889, 0.86044325]])
 
 
         # Network model
@@ -109,11 +113,17 @@ class LQRNengo:
             def gc_fun(t,x):
                 yp=x[0].reshape(1,1)
                 return ((Bc@yp)*t_synapse).flatten()
-        
+
+            def satfun(x,a):
+                return np.clip(x,-a,a)
             #funcion de salida del controlador
             def control(t,x):
-                # x= xc1,xc2
-                return (Cc@x.reshape(2,1)).flatten()
+            # x= xc1,xc2
+                return satfun((Cc@x.reshape(2,1)).flatten(),0.08)
+            # #funcion de salida del controlador
+            # def control(t,x):
+            #     # x= xc1,xc2
+            #     return (Cc@x.reshape(2,1)).flatten()
         
             # Referencias de posicion
         
