@@ -71,7 +71,7 @@ class servos:
         return [x, y]
 
     def uSafety(self, u):
-        if u > 1.1 or u < -1.1:
+        if u > 1.1:
             u = 1
         elif u < -1.1: 
             u = -1

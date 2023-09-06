@@ -71,6 +71,7 @@ class PIDNengo:
             # nengo.Connection(biasNode[0], errorX, synapse=None)
             # nengo.Connection(biasNode[1], errorY, synapse=None)
             
+            
 
             # Conections 
             nengo.Connection(setpoint, setPointEnsemble, synapse=None)
@@ -147,7 +148,7 @@ class touchScreenCoordinates:
     def __call__(self, t, values): 
         servoData = Float32MultiArray()
         servoData.data = [values[0], values[1]]
-        #self.pubServo.publish(servoData)
+        self.pubServo.publish(servoData)
         self.rate.sleep()
 
         
@@ -185,6 +186,10 @@ class touchScreenCoordinates:
         x = dataConvolvedX[kernelDelay]
         y = dataConvolvedY[kernelDelay]
         return [x, y]#Ix, Iy
+    
+    def returnXYValues(self):
+        [self.Ix, self.Iy]
+    
 
 class runModel: 
     def __init__(self):
@@ -200,18 +205,15 @@ class runModel:
         self.start_time = rospy.Time.now()
         try:
             #if pop:
-            for i in range(16000): 
+            for i in range(5000): 
                 self.current_time = (rospy.Time.now() - self.start_time).to_sec() #(time.time() - self.start_time) #(rospy.Time.now() - self.start_time).to_sec()
                 self.timeSeries = np.append(self.timeSeries, self.current_time)
                 sim.step()
-                if i % 2000 == 0:
-                    print('RESET Done')
-                    sim.reset()
-                    #sim.clear_probes()
                 pop = False
                 # tik = time.time()
                 # tok = time.time()
                 # print(tok - tik)
+            
             dataProbe0 = sim.data[probes[0]]
             dataProbe1 = sim.data[probes[1]]
             dataProbe2 = sim.data[probes[2]]

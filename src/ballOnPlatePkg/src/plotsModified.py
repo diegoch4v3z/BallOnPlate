@@ -92,11 +92,9 @@ def saveArray(data1, data2, timestamp, filename):
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
     array_path = os.path.join(folder_path, f'{filename}.npy')
-    arrayCSV_path = os.path.join(folder_path, f'{filename}.csv')
 
     stacked_array = np.vstack((data1, data2, timestamp))
     np.save(array_path, stacked_array)
-    np.savetxt(arrayCSV_path, stacked_array, delimiter=',' )
 def saveArray1(data1, timestamp, filename): 
     current_dir = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src'
     folder_path = os.path.join(current_dir, 'savedArrays')
@@ -107,108 +105,27 @@ def saveArray1(data1, timestamp, filename):
     stacked_array = np.vstack((data1, timestamp))
     np.save(array_path, stacked_array)
 
-def saveArray2(data1, data2, timestamp, filename): 
-    current_dir = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src'
-    folder_path = os.path.join(current_dir, 'savedArraysModified')
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-    array_path = os.path.join(folder_path, f'{filename}.npy')
-    arrayCSV_path = os.path.join(folder_path, f'{filename}.csv')
-
-    stacked_array = np.vstack((data1, data2, timestamp))
-    np.save(array_path, stacked_array)
-    np.savetxt(arrayCSV_path, stacked_array, delimiter=',' )
-
-
 def loadArray(): 
-    current_dir = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/savedArrays'
+    current_dir = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/savedArraysModified'
     file_list = [file for file in os.listdir(current_dir) if file.endswith(".npy")]
     data_arrays = []
     for file in file_list:
-        print(current_dir)
+        print(file)
         file_path = os.path.join(current_dir, file)
         loaded_data = np.load(file_path, allow_pickle=True)
         data_arrays.append(loaded_data)
     
-def plotCCE(): 
-    touschreenReadingRaw = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/savedArrays/touchScreenReadingRaw.npy')
-    touschreenReadingFiltered = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/savedArrays/touchScreenReadingFiltered.npy')
-    touchscreenNengo = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/savedArrays/touchScreenReadingNengo.npy')
-    setPointReading = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/savedArrays/setPointEnsembleNengo.npy')
-    controlSignal = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/savedArrays/controlNengo.npy')
-
-    #  saveArray2(self.dataXPlot, self.dataYPlot, self.timeSeries, 'touchScreenReadingRaw')#, 'TouchScreen Reading', 'Time (s)', 'Coordinate Position', 'touchScreenData', 'X-Axis', 'Y-Axis', limit=True) 
-    #  saveArray2(self.dataXPlotFiltered, self.dataYPlotFiltered, self.timeSeries[:len(self.dataXPlotFiltered)], 'touchScreenReadingFiltered')
-
-    # Plotting
-    figs, axs = plt.subplots(3,3, figsize=(6.67, 5.0))
-
-    axs[0, 0].plot(touchscreenNengo[2,:], touchscreenNengo[0,:], color='black')
-    axs[0, 0].plot(setPointReading[2,:], setPointReading[0,:], color='red')
-    axs[0, 0].plot(controlSignal[2,:], controlSignal[0,:], color='blue')
-    axs[0, 0].tick_params(axis='both', which='major', labelsize=6)
-    axs[0, 0].get_xaxis().set_visible(False)
-    axs[0, 0].set_ylim(-0.75, 0.75)
-    axs[0, 0].set_yticks([-0.75, 0, 0.75])
-    axs[0, 0].set_title('Subplot 1')
-
-    axs[0, 1].plot()
-    axs[0, 1].set_title('Subplot 1')
-    axs[0, 1].set_ylim(-0.75, 0.75)
-    axs[0, 1].set_yticks([-0.75, 0, 0.75])
-    axs[0, 1].tick_params(axis='both', which='major', labelsize=6)
-
-    axs[0, 2].plot()
-    axs[0, 2].set_title('Subplot 1')
-    axs[0, 2].set_ylim(-0.75, 0.75)
-    axs[0, 2].set_yticks([-0.75, 0, 0.75])
-    axs[0, 2].tick_params(axis='both', which='major', labelsize=6)
-
-    axs[1, 0].plot()
-    axs[1, 0].set_title('Subplot 1')
-    axs[1, 0].tick_params(axis='both', which='major', labelsize=6)
-
-    axs[1, 1].plot()
-    axs[1, 1].set_title('Subplot 1')
-    axs[1, 1].set_ylim(-0.75, 0.75)
-    axs[1, 1].set_yticks([-0.75, 0, 0.75])
-    axs[1, 1].tick_params(axis='both', which='major', labelsize=6)
-
-    axs[1, 2].plot()
-    axs[1, 2].set_title('Subplot 1')
-    axs[1, 2].set_ylim(-0.75, 0.75)
-    axs[1, 2].set_yticks([-0.75, 0, 0.75])
-    axs[1, 2].tick_params(axis='both', which='major', labelsize=6)
-   
-    axs[2, 0].plot()
-    axs[2, 0].set_title('Subplot 1')
-    axs[2, 0].set_ylim(-0.75, 0.75)
-    axs[2, 0].set_yticks([-0.75, 0, 0.75])
-    axs[2, 0].tick_params(axis='both', which='major', labelsize=6)
-
-    axs[2, 1].plot()
-    axs[2, 1].set_title('Subplot 1')
-    axs[2, 1].set_ylim(-0.75, 0.75)
-    axs[2, 1].set_yticks([-0.75, 0, 0.75])
-    axs[2, 1].tick_params(axis='both', which='major', labelsize=6)
-
-    axs[2, 2].plot()
-    axs[2, 2].set_title('Subplot 1')
-    axs[2, 2].set_ylim(-0.75, 0.75)
-    axs[2, 2].set_yticks([-0.75, 0, 0.75])
-    axs[2, 2].tick_params(axis='both', which='major', labelsize=6)
-
-    plt.subplots_adjust(wspace=0, hspace=0)
-    plt.tight_layout()
-
-    save_folder = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/plots' 
-    file_name = 'results.png' 
-    dpi_value = 300  
-    save_path = f"{save_folder}/{file_name}"
-    plt.savefig(save_path, dpi=dpi_value)
-
     
+   
+# touchScreenReadingFiltered.npy
+# touchScreenReadingRaw.npy
 
+    plotOneData(data_arrays[1][0], data_arrays[1][2], 'touchScreenReading_rawInformation_Xaxis', 'Time (s)', 'Position', 'touchScreenReading_rawInformation_Xaxis', 'X-axis')
+    plotOneData(data_arrays[1][1], data_arrays[1][2], 'touchScreenReading_rawInformation_Yaxis', 'Time (s)', 'Position', 'touchScreenReading_rawInformation_Yaxis', 'Y-axis')
+    plotOneData(data_arrays[0][0], data_arrays[0][2], 'touchScreenReading_filteredInformation_Xaxis', 'Time (s)', 'Position', 'touchScreenReading_filteredInformation_Xaxis', 'X-axis')
+    plotOneData(data_arrays[0][1], data_arrays[0][2], 'touchScreenReading_filteredInformation_Yaxis', 'Time (s)', 'Position', 'touchScreenReading_filteredInformation_Yaxis', 'Y-axis')
+    plotOneData(data_arrays[2][0], data_arrays[2][2], 'controlNengo_Xaxis', 'Time (s)', 'controlSignal(u)', 'controlSignalU_Xaxis', 'X-axis')
+    plotOneData(data_arrays[2][1], data_arrays[2][2], 'controlNengo_Yaxis', 'Time (s)', 'controlSignal(u)', 'controlSignalU_Yaxis', 'Y-axis')
 #     plotOneData(data_arrays[0][0], data_arrays[0][1], 'Derivative X-Axis Nengo', 'Time (s)', 'Value', 'derivativeXNengo', 'Derivative X')
 #     plotOneData(data_arrays[8][0], data_arrays[8][1], 'Derivative Y-Axis Nengo', 'Time (s)', 'Value', 'derivativeYNengo', 'Derivative Y')
 #     plotOneData(data_arrays[1][0], data_arrays[1][1], 'Error Nengo Y', 'Time (s)', 'Value', 'errorNengoY', 'Y')
@@ -234,4 +151,4 @@ def plotCCE():
 #     plotOneData(data_arrays[5][1], data_arrays[5][2], 'SetPoint Y', 'Time (s)', 'Value', 'setPointYNengo', 'Setpoint Y Nengo')
 
 if __name__ == '__main__':
-    plotCCE()
+    loadArray()

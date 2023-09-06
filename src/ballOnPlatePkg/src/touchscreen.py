@@ -9,7 +9,7 @@ import usb.core, usb.util
 import numpy as np
 import rospy
 from std_msgs.msg import Float32MultiArray
-from plots import plotTwoAxis, saveArray
+from plots import plotTwoAxis, saveArray, saveArray2
 from constants import Constants
 
 class touchScreen: 
@@ -18,6 +18,8 @@ class touchScreen:
         self.start_time = rospy.Time.now() 
         self.dataXPlot = np.array([])
         self.dataYPlot = np.array([])
+        self.dataXPlotFiltered = np.array([])
+        self.dataYPlotFiltered = np.array([])
         self.timeSeries = np.array([])
         self.Ix = np.array([])
         self.Iy = np.array([])
@@ -70,10 +72,24 @@ class touchScreen:
             # Y_coordinate = (((data[4] - 7)*256 + data[3])*-1)/(screen_y_lim_down)
             X_coordinate = (((data[2] - 8)*256 + data[1])*-1)/(screen_x_lim_down)
             Y_coordinate = (((data[4] - 8)*256 + data[3])*-1)/(screen_y_lim_down)
+
         except usb.core.USBError as e: 
             data = None
         return [X_coordinate, Y_coordinate]
     
+    def movingAverage(self, Ix, Iy, kernelSize, kernelDelay): 
+        kernel = np.ones(kernelSize)/kernelSize
+        # Ix[-1] = np.sum(Ix[-kernelSize:])/kernelSize
+        # Iy[-1] = np.sum(Iy[-kernelSize:])/kernelSize
+        # dataConvolvedX = np.convolve(Ix[-kernelSize:], kernel, mode = 'same')
+        # dataConvolvedY = np.convolve(Iy[-kernelSize:], kernel, mode = 'same')
+        dataConvolvedX = np.convolve(Ix[-kernelSize:], kernel, mode = 'same')
+        dataConvolvedY = np.convolve(Iy[-kernelSize:], kernel, mode = 'same')
+        x = dataConvolvedX[kernelDelay]
+        y = dataConvolvedY[kernelDelay]
+        return [x, y]#Ix, Iy
+    
+
     def runNode(self):
 
         try:
@@ -84,11 +100,18 @@ class touchScreen:
                 coordinate = self.getData(self.dev, self.ep_in, self.ep_out)
                 self.dataXPlot = np.append(self.dataXPlot, coordinate[0])
                 self.dataYPlot = np.append(self.dataYPlot, coordinate[1])
+
+                if len(self.dataXPlot) > self.kPID[7] and len(self.dataYPlot) > self.kPID[7]: 
+                    self.xyFiltered = self.movingAverage(self.dataXPlot, self.dataYPlot, self.kPID[7],self.kPID[8])
+                    self.dataXPlotFiltered = np.append(self.dataXPlotFiltered, self.xyFiltered[0])
+                    self.dataYPlotFiltered = np.append(self.dataYPlotFiltered, self.xyFiltered[1])
+
                 data.data = [coordinate[0], coordinate[1]]
                 self.pub.publish(data)
                 self.rate.sleep()
             if self.plot: 
-                saveArray(self.dataXPlot, self.dataYPlot, self.timeSeries, 'touchScreenReadingRaw')#, 'TouchScreen Reading', 'Time (s)', 'Coordinate Position', 'touchScreenData', 'X-Axis', 'Y-Axis', limit=True) 
+                saveArray2(self.dataXPlot, self.dataYPlot, self.timeSeries, 'touchScreenReadingRaw')#, 'TouchScreen Reading', 'Time (s)', 'Coordinate Position', 'touchScreenData', 'X-Axis', 'Y-Axis', limit=True) 
+                saveArray2(self.dataXPlotFiltered, self.dataYPlotFiltered, self.timeSeries[:len(self.dataXPlotFiltered)], 'touchScreenReadingFiltered')
         except rospy.ROSInterruptException: 
             pass
 if __name__ == '__main__':
