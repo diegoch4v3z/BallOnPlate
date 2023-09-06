@@ -46,7 +46,7 @@ class LQRNengo:
         gravity = 9.81
         t_synapse = 0.2
         r = 0.1
-        radC=0.3
+        radC=0.7
 
         Ap=np.array([[0,1],[0,0]])
         Bp=np.array([[0],[-5/7*9.81]])
@@ -69,12 +69,18 @@ class LQRNengo:
         # Ac=Ap+Bp@Kx+Lx@Cpy
         # Bc=-Lx
         # Cc=Kx
+        Ac=np.array([[ -4.47224776,   1.        ],
+                    [-11.80923651,  -2.29240951]])
 
-        Lx=np.array([[ -4.47224776], [-10.        ]])
-        Kx=np.array([[1.41421356, 1.18475699]])
-        Ac=np.array([[ -4.47224776,   1.],[-19.90959646,  -8.3017615 ]])
-        Bc=np.array([[ 4.47224776],[10.]])
-        Cc=np.array([[1.41421356, 1.18475699]])
+        Bc=np.array([[ 4.47224776],
+                    [10.        ]])
+
+        Cc=np.array([[0.25819889, 0.32715324]])
+
+
+        # Ac=np.array([[ -4.47224776,   1.],[-19.90959646,  -8.3017615 ]])
+        # Bc=np.array([[ 4.47224776],[10.]])
+        # Cc=np.array([[1.41421356, 1.18475699]])
 
 
         # Network model
@@ -91,8 +97,8 @@ class LQRNengo:
             posXY_node = nengo.Node(self.PIDNengoNode, size_out=2, size_in=2)
             
                 # Ensembles to represent matrices Ac and Bc
-            fcx = nengo.Ensemble(n_neurons=1000, dimensions=2, radius = radC)
-            fcy = nengo.Ensemble(n_neurons=1000, dimensions=2, radius = radC)
+            fcx = nengo.Ensemble(n_neurons=1000, dimensions=2, radius = radC) # Estados PLOT
+            fcy = nengo.Ensemble(n_neurons=1000, dimensions=2, radius = radC) # Estados PLOT
 
                 #funcion de dinamica del controlador
             def fc_fun(x):
@@ -148,9 +154,15 @@ class LQRNengo:
             nengo.Connection(ErrRefX,gcx,synapse = 0) # Conexión de la segunda entrada del controlador
             nengo.Connection(ErrRefY,gcy,synapse = 0)
 
+            ConvertX = nengo.Node(lambda t,x: np.degrees(np.arcsin(x)), size_in=1, size_out=1)
+            ConvertY = nengo.Node(lambda t,x: np.degrees(np.arcsin(x)), size_in=1, size_out=1)
 
-            nengo.Connection(ycx, posXY_node[0], synapse=0, transform=-1)
-            nengo.Connection(ycy, posXY_node[1], synapse=0, transform=-1)
+            nengo.Connection(ycx, ConvertX, synapse=0)
+            nengo.Connection(ycy, ConvertY, synapse=0)
+            
+
+            nengo.Connection(ConvertX, posXY_node[0], synapse=0, transform=-1)
+            nengo.Connection(ConvertY, posXY_node[1], synapse=0, transform=-1)
             if probe: 
                 print('Probing')
                 
