@@ -9,7 +9,7 @@ import usb.core, usb.util
 import numpy as np
 import rospy
 from std_msgs.msg import Float32MultiArray
-from plots import plotTwoAxis, saveArray, saveArray2, saveArrayLQR
+from plots import plotTwoAxis, saveArray, saveArray2, saveArrayLQR, saveTimeArrayTouchscreen, saveArrayACC
 from constants import Constants
 
 
@@ -28,6 +28,7 @@ class touchScreen:
         self.plot = True
         c = Constants()
         self.kPID = c.PIDConstants()
+
     def movingAverage(self, Ix, Iy, kernelSize, kernelDelay): 
         kernel = np.ones(kernelSize)/kernelSize
         dataConvolvedX = np.convolve(Ix[-kernelSize:], kernel, mode = 'same')
@@ -36,17 +37,14 @@ class touchScreen:
         y = dataConvolvedY[kernelDelay]
         return [x, y]
 
-
-    def initNode(self, idVendor = 0x04d8, idProduct = 0x0c02):
-        
+    def initNode(self, idVendor = 0x04d8, idProduct = 0x0c02):  
         print('Initializing touchscreen...')
         dev = usb.core.find(idVendor = idVendor, idProduct = idProduct)
         ep_in = dev[0].interfaces()[0].endpoints()[0]
         ep_out = dev[0].interfaces()[0].endpoints()[1]
         intf = dev[0].interfaces()[0].bInterfaceNumber
         dev.reset()
-        
-
+    
         if dev is None: 
             raise ValueError('Device not found')
         else: 
@@ -70,10 +68,10 @@ class touchScreen:
         screen_y_lim_down = 1995
         try: 
             data = dev.read(ep_in.bEndpointAddress, ep_in.wMaxPacketSize) #Collected data from the touchscreen
-            # X_coordinate = (((data[2] - 10)*256 + data[1])*-1)/(screen_x_lim_down)
-            # Y_coordinate = (((data[4] - 7)*256 + data[3])*-1)/(screen_y_lim_down)
-            X_coordinate = (((data[2] - 8)*256 + data[1])*-1)/(screen_x_lim_down)
-            Y_coordinate = (((data[4] - 8)*256 + data[3])*-1)/(screen_y_lim_down)
+            X_coordinate = (((data[2] - 8)*255 + data[1])*-1)/(screen_x_lim_down) 
+            Y_coordinate = (((data[4] - 8)*255 + data[3])*-1)/(screen_y_lim_down) 
+            #print(data[2], data[1], X_coordinate)
+            #print(X_coordinate, Y_coordinate)
 
         except usb.core.USBError as e: 
             data = None
@@ -81,23 +79,16 @@ class touchScreen:
     
     def movingAverage(self, Ix, Iy, kernelSize, kernelDelay): 
         kernel = np.ones(kernelSize)/kernelSize
-        # Ix[-1] = np.sum(Ix[-kernelSize:])/kernelSize
-        # Iy[-1] = np.sum(Iy[-kernelSize:])/kernelSize
-        # dataConvolvedX = np.convolve(Ix[-kernelSize:], kernel, mode = 'same')
-        # dataConvolvedY = np.convolve(Iy[-kernelSize:], kernel, mode = 'same')
         dataConvolvedX = np.convolve(Ix[-kernelSize:], kernel, mode = 'same')
         dataConvolvedY = np.convolve(Iy[-kernelSize:], kernel, mode = 'same')
         x = dataConvolvedX[kernelDelay]
         y = dataConvolvedY[kernelDelay]
         return [x, y]#Ix, Iy
-    
 
     def runNode(self):
 
         try:
             while not rospy.is_shutdown():
-                self.current_time = (rospy.Time.now() - self.start_time).to_sec() #(time.time() - self.start_time)#(rospy.Time.now() - self.start_time).to_sec()
-                self.timeSeries = np.append(self.timeSeries, self.current_time)
                 data = Float32MultiArray()
                 coordinate = self.getData(self.dev, self.ep_in, self.ep_out)
                 self.dataXPlot = np.append(self.dataXPlot, coordinate[0])
@@ -111,9 +102,16 @@ class touchScreen:
                 data.data = [coordinate[0], coordinate[1]]
                 self.pub.publish(data)
                 self.rate.sleep()
+
+                self.current_time = (rospy.Time.now()).to_sec()
+                self.timeSeries = np.append(self.timeSeries, self.current_time)
+                self.start_time = rospy.Time.now()
             if self.plot: 
-                saveArrayLQR(self.dataXPlot, self.dataYPlot, self.timeSeries, 'touchScreenReadingRaw')#, 'TouchScreen Reading', 'Time (s)', 'Coordinate Position', 'touchScreenData', 'X-Axis', 'Y-Axis', limit=True) 
-                saveArrayLQR(self.dataXPlotFiltered, self.dataYPlotFiltered, self.timeSeries[:len(self.dataXPlotFiltered)], 'touchScreenReadingFiltered')
+                #saveArrayLQR(self.dataXPlot, self.dataYPlot, self.timeSeries, 'touchScreenReadingRaw')
+                #saveArrayLQR(self.dataXPlotFiltered, self.dataYPlotFiltered, self.timeSeries[:len(self.dataXPlotFiltered)], 'touchScreenReadingFiltered')
+                saveTimeArrayTouchscreen(self.timeSeries, 'touchScreenReadingTiming')
+                saveArrayACC(self.dataXPlot, self.dataYPlot, self.timeSeries, 'touchScreenReadingRaw')
+                
         except rospy.ROSInterruptException: 
             pass
 if __name__ == '__main__':

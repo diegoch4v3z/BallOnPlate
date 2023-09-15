@@ -8,12 +8,14 @@ import nengo, rospy, sys
 import matplotlib.pyplot as plt 
 from constants import Constants
 from std_msgs.msg import Float32MultiArray
-from plots import plotTwoAxis, saveArray, saveArray1, saveArrayLQR
+from plots import plotTwoAxis, saveArray, saveArray1, saveArrayLQR, saveTimeArray, saveTimearrayLQG
 import numpy as np
 import scipy, datetime, time
 import message_filters
 #import control as ct
 import os
+
+
 
 pop = True
 class DelayX: 
@@ -44,7 +46,7 @@ class LQRNengo:
         # Constants 
         dt = 1e-3
         gravity = 9.81
-        t_synapse = 0.2
+        t_synapse = 0.01
         r = 0.1
         radC=0.1
 
@@ -188,18 +190,12 @@ class LQRNengo:
                 self.fcxProbe = nengo.Probe(fcx, synapse=0.01)
                 self.fcyProbe = nengo.Probe(fcy, synapse=0.01)
                 self.ErrRefXProbe = nengo.Probe(ErrRefX, synapse = 0.01)
-                self.ErrRefYProbe = nengo.Probe(ErrRefY, synapse = 0.01 )
+                self.ErrRefYProbe = nengo.Probe(ErrRefY, synapse = 0.01)
                 
                 
                 
         
         
-    def runNode(self): 
-        try: 
-            while not rospy.is_shutdown(): 
-                self.rate.sleep()
-        except rospy.ROSInterruptException: 
-            pass 
     def get_model(self): 
         return self.model
     def get_probes(self): 
@@ -220,7 +216,6 @@ class touchScreenCoordinates:
         self.sub = rospy.Subscriber('touchscreenData', Float32MultiArray, callback=self.callback)
         self.pubServo = rospy.Publisher('servoData', Float32MultiArray, queue_size=10)
         
-        self.rate = rospy.Rate(240)
         
     def callback(self, msg):
         self.x = msg.data[0]
@@ -232,10 +227,9 @@ class touchScreenCoordinates:
         servoData = Float32MultiArray()
         servoData.data = [values[0], values[1]]
         self.pubServo.publish(servoData)
-        self.rate.sleep()
         return self.handle_output()
+    
     def handle_output(self): 
-
         self.Ix = np.append(self.Ix, self.x)
         self.Iy = np.append(self.Iy, self.y)
         if len(self.Ix) > self.kPID[7] and len(self.Iy) > self.kPID[7]: 
@@ -243,13 +237,14 @@ class touchScreenCoordinates:
             self.Ix[-1] = self.xyFiltered[0]
             self.Iy[-1] = self.xyFiltered[1]
         return [self.Ix[-1], self.Iy[-1]] #[self.x, self.y] #
+    
     def movingAverage(self, Ix, Iy, kernelSize, kernelDelay): 
         kernel = np.ones(kernelSize)/kernelSize
         dataConvolvedX = np.convolve(Ix[-kernelSize:], kernel, mode = 'same')
         dataConvolvedY = np.convolve(Iy[-kernelSize:], kernel, mode = 'same')
         x = dataConvolvedX[kernelDelay]
         y = dataConvolvedY[kernelDelay]
-        return [x, y]#Ix, Iy
+        return [x, y]
     
     def returnXYValues(self):
         [self.Ix, self.Iy]
@@ -262,19 +257,29 @@ class runModel:
         self.timeSeries = np.array([])
         p = LQRNengo()
         model = p.get_model()
-        sim = nengo.Simulator(model, dt=0.005, optimize=True)
-        
-        
+        # 0.001, 0.002, 0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5
+        sim = nengo.Simulator(model, dt=0.01, optimize=True)
+        print(sim.dt)
+        # Notes
+        # Nengo takes at least 0.01 ms to compute
+        # If I want to have 66 Hz - 0.015 ms 
+        # I have 2.5 ms to read and send info
+        # 0.00217 s/deg - Servo. If my max is 5 degrees. It takes 10 ms to travel servo 100 Hz. 20 ms 10+10+5
+
+        # 25 ms - 40 Hz
+        # 
         probes = p.get_probes()
         self.start_time = rospy.Time.now()
+        self.rate = rospy.Rate(90)
         try:
             #if pop:
-            for i in range(5000): 
+            for i in range(4000): 
+                sim.step() 
                 self.current_time = (rospy.Time.now() - self.start_time).to_sec() #(time.time() - self.start_time) #(rospy.Time.now() - self.start_time).to_sec()
-                self.timeSeries = np.append(self.timeSeries, self.current_time)
-                sim.step()
-                pop = False
-            
+                self.timeSeries = np.append(self.timeSeries, self.current_time)   
+                self.start_time = rospy.Time.now()
+                
+                self.rate.sleep()
             dataProbe0 = sim.data[probes[0]]
             dataProbe1 = sim.data[probes[1]]
             dataProbe2 = sim.data[probes[2]]
@@ -288,6 +293,10 @@ class runModel:
         saveArrayLQR(dataProbe1[:, 0], dataProbe1[:, 1], self.timeSeries, 'fcyNengo')
         saveArrayLQR(dataProbe1[:, 0], dataProbe1[:, 1], self.timeSeries, 'ErrRefXProbe')
         saveArrayLQR(dataProbe1[:, 0], dataProbe1[:, 1], self.timeSeries, 'ErrRefYProbe')
+        saveTimeArray(self.timeSeries, sim.dt, 'LQRNengo_timeSeries')
+        saveTimearrayLQG(self.timeSeries, 'LQGTiming')
+
+        
         # saveArray1(dataProbe2[:, 0], self.timeSeries, 'errorNengoX')
         # saveArray1(dataProbe3[:, 0], self.timeSeries, 'errorNengoY')
         # saveArray1(dataProbe4[:, 0], self.timeSeries, 'derivativeXNengo')
@@ -307,6 +316,7 @@ if __name__ == '__main__':
     try:
         while not rospy.is_shutdown():
             runModel()
+            
         send_interrupt_to_other_code()
     except rospy.ROSInterruptException: 
         pass

@@ -19,8 +19,8 @@
 
     <node 
         pkg = 'ballOnPlatePkg'
-        type = 'LQRNengo.py'
-        name = 'LQRNengo'
+        type = 'PIDNengo.py'
+        name = 'PIDNengo'
         output = 'screen'
     ></node>
 

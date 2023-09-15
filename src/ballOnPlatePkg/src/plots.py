@@ -119,6 +119,15 @@ def saveArray2(data1, data2, timestamp, filename):
     np.save(array_path, stacked_array)
     np.savetxt(arrayCSV_path, stacked_array, delimiter=',' )
 
+def saveArrayACC(data1, data2, timestamp, filename): 
+    current_dir = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src'
+    folder_path = os.path.join(current_dir, 'ArraysACC')
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    array_path = os.path.join(folder_path, f'{filename}.npy')
+    stacked_array = np.vstack((data1, data2, timestamp))
+    np.save(array_path, stacked_array)
+
 def saveArrayLQR(data1, data2, timestamp, filename): 
     import os
     os.chdir('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/savedArrayLQR')
@@ -128,6 +137,42 @@ def saveArrayLQR(data1, data2, timestamp, filename):
     stacked_array = np.vstack((data1, data2, timestamp))
     np.save(array_path, stacked_array)
     np.savetxt(arrayCSV_path, stacked_array, delimiter=',' )
+
+def saveTimeArray(data1, dt, filename): 
+    import os
+    os.chdir('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/tiempos')
+    folder_path = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/tiempos'
+    filename = filename + str(dt)
+    array_path = os.path.join(folder_path, f'{filename}.npy')
+    arrayCSV_path = os.path.join(folder_path, f'{filename}.csv')
+    np.save(array_path, data1)
+    np.savetxt(arrayCSV_path, data1, delimiter=',' )
+
+def saveTimearrayLQG(data1, filename): 
+    import os 
+    os.chdir('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/timeVerification')
+    folder_path = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/timeVerification'
+    array_path = os.path.join(folder_path, f'{filename}.npy') 
+    arrayCSV_path = os.path.join(folder_path, f'{filename}.csv')
+    np.save(array_path, data1)
+    np.savetxt(arrayCSV_path, data1, delimiter=',')
+
+def saveTimeArrayTouchscreen(data1, filename): 
+    import os 
+    os.chdir('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/timeVerification')
+    folder_path = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/timeVerification'
+    array_path = os.path.join(folder_path, f'{filename}.npy') 
+    arrayCSV_path = os.path.join(folder_path, f'{filename}.csv')
+    np.save(array_path, data1)
+    np.savetxt(arrayCSV_path, data1, delimiter=',')
+def saveTimeArrayServos(data1, filename): 
+    import os 
+    os.chdir('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/timeVerification')
+    folder_path = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/timeVerification'
+    array_path = os.path.join(folder_path, f'{filename}.npy') 
+    arrayCSV_path = os.path.join(folder_path, f'{filename}.csv')
+    np.save(array_path, data1)
+    np.savetxt(arrayCSV_path, data1, delimiter=',')
 
 def loadArray(): 
     current_dir = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/savedArrays'
@@ -194,7 +239,7 @@ def plotCCE():
     # Plotting
     figs, axs = plt.subplots(3,3, figsize=(6.67, 5.0))
 
-    axs[0, 0].plot(touchscreenNengo[2,:], touchscreenNengo[0,:], color='black')
+    axs[0, 0].plot(touchscreenNengo[2][:], touchscreenNengo[0][:], color='black')
     axs[0, 0].plot(setPointReading[2,:], setPointReading[0,:], color='red')
     axs[0, 0].plot(controlSignal[2,:], controlSignal[0,:], color='blue')
     axs[0, 0].tick_params(axis='both', which='major', labelsize=6)
@@ -257,8 +302,7 @@ def plotCCE():
     dpi_value = 300  
     save_path = f"{save_folder}/{file_name}"
     plt.savefig(save_path, dpi=dpi_value)
-
-    
+ 
 
 #     plotOneData(data_arrays[0][0], data_arrays[0][1], 'Derivative X-Axis Nengo', 'Time (s)', 'Value', 'derivativeXNengo', 'Derivative X')
 #     plotOneData(data_arrays[8][0], data_arrays[8][1], 'Derivative Y-Axis Nengo', 'Time (s)', 'Value', 'derivativeYNengo', 'Derivative Y')
@@ -284,5 +328,188 @@ def plotCCE():
 #     plotOneData(data_arrays[5][0], data_arrays[5][2], 'SetPoint X', 'Time (s)', 'Value', 'setPointXNengo', 'Setpoint X Nengo')
 #     plotOneData(data_arrays[5][1], data_arrays[5][2], 'SetPoint Y', 'Time (s)', 'Value', 'setPointYNengo', 'Setpoint Y Nengo')
 
+def plotACC(): 
+    import os
+    os.chdir('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC')
+    control = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/controlNengo.npy')
+    error = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/errorNengo.npy')
+    setPoint = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/setPointEnsembleNengo.npy')
+    touchReading = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/touchScreenReadingRaw.npy')
+    touchReadingNengo = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/touchScreenReadingNengo.npy')
+    disturbance = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/disturbanceData.npy')
+    print('control: ', np.shape(control))
+    print('error: ', np.shape(error))
+    print('setPoint: ', np.shape(setPoint))
+    print('touchReading: ', np.shape(touchReading))
+    print('Disturbance', np.shape(disturbance))
+
+    fig, (ax1, ax2) = plt.subplots(2)
+    
+    ax1.plot(control[2][:], control[0][:], color='red', label='u')
+    ax1.set_ylabel('u (rad)')
+    ax1.set_yticks([-0.4, -0.2, 0, 0.2, 0.4])
+    
+    ax3 = ax1.twinx()
+    ax3.plot(touchReadingNengo[2][:] , touchReadingNengo[0][:] * 52.5 - 1, color='blue', label='x')
+    ax3.plot(setPoint[2][:], setPoint[0][:], color='black', label='xd')
+    ax3.set_ylabel('x, xd (mm)')
+    ax3.set_yticks([-20, -10, 0, 10, 20])
+    ax1.set_xticks([0, 5, 10, 15, 20])
+    ax3.set_xticks([0, 5, 10, 15, 20])
+
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax3.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper right')
+
+    y1_min, y1_max = ax1.get_ylim()
+    y2_min, y2_max = ax3.get_ylim()
+    max_range = max(abs(y1_max), abs(y1_min), abs(y2_max), abs(y2_min))
+    
+    
+    ax3.set_ylim(-20, 20)
+    ax1.set_ylim(-0.50, 0.50) 
+    ax3.set_xlim(0, 20)
+    ax1.set_xlim(0, 20)
+    ax1.set_xlabel('Time (s)')
+    ax3.set_xlabel('Time (s)')
+
+    ax2.plot(error[2][:], error[0][:]* 52.5 - 1 + 0.030*52.5, color='blue', label='error')
+    ax2.plot(disturbance[2][:], disturbance[0][:]* 52.5 , color='red', label ='step')
+    ax2.plot(setPoint[2][:], setPoint[0][:], color='black', label='xd')
+    #axs[0, 0].plot(controlSignal[2,:], controlSignal[0,:], color='blue')
+    #ax2.tick_params(axis='both', which='major', labelsize=6)
+    #ax2.get_xaxis().set_visible(False)
+    ax2.set_ylim(-20, 20)
+    ax2.set_yticks([-20, -10, 0, 10, 20])
+    ax2.set_xticks([0, 5, 10, 15, 20])
+    ax2.set_ylabel('error (mm)')
+    ax2.set_xlabel('Time (s)')
+
+    ax2.legend()
+    ax2.set_xlim(0, 20)
+    #ax2.
+
+    ax1.grid()
+    ax2.grid()
+
+    plt.subplots_adjust(wspace=0, hspace=0)
+    plt.tight_layout()
+    
+
+    save_folder = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC' 
+    file_name = 'XaxisPlot.png' 
+    dpi_value = 1200  
+    save_path = f"{save_folder}/{file_name}"
+    plt.savefig(save_path, dpi=dpi_value)
+ 
+def plotACCY():
+    import os
+    os.chdir('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC')
+    control = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/controlNengo.npy')
+    error = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/errorNengo.npy')
+    setPoint = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/setPointEnsembleNengo.npy')
+    touchReading = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/touchScreenReadingRaw.npy')
+    touchReadingNengo = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/touchScreenReadingNengo.npy')
+    disturbance = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/disturbanceData.npy')
+    print('control: ', np.shape(control))
+    print('error: ', np.shape(error))
+    print('setPoint: ', np.shape(setPoint))
+    print('touchReading: ', np.shape(touchReading))
+    print('Disturbance', np.shape(disturbance))
+
+    fig, (ax1, ax2) = plt.subplots(2)
+    
+    ax1.plot(control[2][:], control[1][:], color='red', label='u')
+    ax1.set_ylabel('u (rad)')
+    ax1.set_yticks([-0.4, -0.2, 0, 0.2, 0.4])
+    
+    ax3 = ax1.twinx()
+    
+    ax3.plot(touchReadingNengo[2][:] , touchReadingNengo[1][:] * 82.5 - 1, color='blue', label='x')
+    ax3.plot(setPoint[2][:], setPoint[1][:], color='black', label='xd')
+    ax3.set_ylabel('x, xd (mm)')
+    #ax1.set_ylim(-0.5, 0.5)
+    ax3.set_yticks([-20, -10, 0, 10, 20])
+    ax3.set_xticks([0, 5, 10, 15, 20])
+    ax1.set_xticks([0, 5, 10, 15, 20])
+    # ax3 = ax1.twinx()
+    # ax3.plot(control[2][:], control[0][:], color='red', label='u')
+    # ax3.set_ylabel('u (rad)')
+    # ax3.set_yticks([-0.4, -0.2, 0, 0.2, 0.4])
+
+
+
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax3.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper right')
+
+    y1_min, y1_max = ax1.get_ylim()
+    y2_min, y2_max = ax3.get_ylim()
+    max_range = max(abs(y1_max), abs(y1_min), abs(y2_max), abs(y2_min))
+    ax3.set_ylim(-20, 20)
+    ax1.set_ylim(-0.50, 0.50)
+    ax3.set_xlim(0, 20) 
+    ax1.set_xlim(0, 20) 
+
+    ax2.plot(error[2][:], error[1][:]* 82.5 - 1 + 0.015*82.5, color='blue', label='error')
+    ax2.plot(disturbance[2][:], disturbance[0][:]*52.5 , color='red', label ='step')
+    ax2.plot(setPoint[2][:], setPoint[1][:], color='black', label='xd')
+    #axs[0, 0].plot(controlSignal[2,:], controlSignal[0,:], color='blue')
+    #ax2.tick_params(axis='both', which='major', labelsize=6)
+    #ax2.get_xaxis().set_visible(False)
+    ax2.set_ylim(-20, 20)
+    ax2.set_xlim(0, 20)
+    ax2.set_yticks([-20, -10, 0, 10, 20])
+    ax2.set_xticks([0, 5, 10, 15, 20])
+    ax2.set_ylabel('error (mm)')
+    ax2.legend()
+    #ax2.
+
+    ax1.grid()
+    ax2.grid()
+
+    plt.subplots_adjust(wspace=0, hspace=0)
+    plt.tight_layout()
+    
+
+    save_folder = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC' 
+    file_name = 'YaxisPlot.png' 
+    dpi_value = 1200  
+    save_path = f"{save_folder}/{file_name}"
+    plt.savefig(save_path, dpi=dpi_value)
+
+
+def plotTimeVerification(): 
+    import os 
+    os.chdir('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/timeVerification')
+    LQGTiming = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/timeVerification/LQGTiming.npy')
+    ServoTiming = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/timeVerification/ServoTiming.npy')
+    touchScreenReadingTiming = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/timeVerification/touchScreenReadingTiming.npy')
+    
+
+    plt.plot(np.linspace(0, len(LQGTiming), len(LQGTiming)), LQGTiming, label='LQGTiming')
+    plt.plot(np.linspace(0, len(ServoTiming), len(ServoTiming)), ServoTiming, label='ServoTiming')
+    plt.plot(np.linspace(0, len(touchScreenReadingTiming), len(touchScreenReadingTiming)), touchScreenReadingTiming, label='touchScreenReadingTiming')
+    plt.title('Time Verification')
+    plt.xlabel('X-axis Label')
+    plt.ylabel('Y-axis Label')
+    plt.ylim([0, 0.03])
+    plt.legend()
+    plt.grid()
+
+    save_folder = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/timeVerification/' 
+
+    file_name = 'timeVerification.png' 
+    file_path = os.path.join(save_folder, file_name)
+
+    plt.savefig(file_path)
+
+
+    plt.show()
+
+    print(f"Figure saved as {file_path}")
+    
+    
+
 if __name__ == '__main__':
-    plotLQR()
+    plotACCY()
