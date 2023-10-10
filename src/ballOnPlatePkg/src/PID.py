@@ -9,7 +9,7 @@ import numpy as np
 import rospy, datetime
 from std_msgs.msg import Float32MultiArray
 from constants import Constants
-from plots import plotTwoAxis, saveArray
+from plots import plotTwoAxis, saveArray, saveArrayACC
 
 class PIDClass: 
     def __init__(self):
@@ -64,13 +64,6 @@ class PIDClass:
         self.xPlot = np.append(self.xPlot, self.x)
         self.yPlot = np.append(self.yPlot, self.y)
 
-        #self.SP = np.append(self.SP, self.kPID[6])  
-        # r = 0.1
-        # #function = lambda t: r*np.cos(0.1*t)
-        # functionx = r*np.cos(1.0*self.current_time)
-        # functiony = r*np.sin(1.0*self.current_time)
-
-
        
         self.SPx = np.append(self.SPx, 0)                    # Add set point continously
         self.SPy = np.append(self.SPy, 0) 
@@ -99,9 +92,16 @@ class PIDClass:
         self.pErryPlot = np.append(self.pErryPlot, pErry)
         self.Ux = np.append(self.Ux, ux)
         self.Uy = np.append(self.Uy, uy)
+
+        if len(self.Ix) > self.kPID[7] and len(self.Iy) > self.kPID[7]:
+            self.xyFiltered = self.movingAverage(self.Ux, self.Uy, self.kPID[7], -1)
+            self.Ux[-1] = self.xyFiltered[0]
+            self.Uy[-1] = self.xyFiltered[1]
+
         servoData = Float32MultiArray()
         servoData.data = [ux, uy]
-        #self.pubServo.publish(servoData)
+        self.pubServo.publish(servoData)
+
         self.rate.sleep()
         
     def movingAverage(self, Ix, Iy, kernelSize, kernelDelay): 
@@ -121,11 +121,10 @@ class PIDClass:
         u = kP*error + kI*iErr - kD*dErr
         return u, dErr, error
     def closeNode(self):
-        saveArray(self.IxPlot, self.IyPlot, self.timeSeries, 'touchScreenReadingPD')
-        saveArray(self.Ux, self.Uy, self.timeSeries, 'controlPD')
-        saveArray(self.dErrxPlot, self.dErryPlot, self.timeSeries, 'derivativePD')
-        saveArray(self.pErrxPlot, self.pErryPlot, self.timeSeries, 'errorPD')
-        # saveArray(self.xPlot, self.yPlot, self.timeSeries, 'touchScreenRawData')
+        saveArrayACC(self.SPx, self.SPy, self.timeSeries, 'setPoint_PID')
+        saveArrayACC(self.IxPlot, self.IyPlot, self.timeSeries, 'touchScreen_PID')
+        saveArrayACC(self.Ux, self.Uy, self.timeSeries, 'control_PID')
+        saveArrayACC(self.pErrxPlot, self.pErryPlot, self.timeSeries, 'error_PID')
 
 if __name__ == '__main__':
     try:

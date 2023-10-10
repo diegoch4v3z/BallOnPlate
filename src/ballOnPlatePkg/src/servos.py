@@ -15,7 +15,7 @@ class servos:
     def __init__(self): 
         rospy.init_node('Servo', anonymous=True)
         self.start_time = rospy.Time.now() 
-        self.pwm = Adafruit_PCA9685.PCA9685(address=0x40, busnum=1)
+        self.pwm = Adafruit_PCA9685.PCA9685(address=0x40, busnum=2)
         self.pwm.set_pwm_freq(60)
         self.pwm.set_pwm(0, 0, 375)
         self.pwm.set_pwm(1, 0, 375)
@@ -46,9 +46,9 @@ class servos:
         self.uy = self.mappingUy(msg.data[1])
         self.dataServoXPlot = np.append(self.dataServoXPlot, self.ux)
         self.dataServoYPlot = np.append(self.dataServoYPlot, self.uy)
-        if self.i == 1300 or self.i == 3500: 
+        if self.i == 700 or self.i == 1300: 
             
-            self.pwm.set_pwm(1, 0, 450)
+            self.pwm.set_pwm(0, 0, 450)
             rospy.sleep(0.1)
             print('Disturbance')
             self.disturbance = np.append(self.disturbance, np.array([0.25]))

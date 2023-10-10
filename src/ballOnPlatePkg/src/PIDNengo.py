@@ -158,7 +158,7 @@ class touchScreenCoordinates:
     def __call__(self, t, values): 
         servoData = Float32MultiArray()
         servoData.data = [values[0], values[1]]
-        self.pubServo.publish(servoData)
+        #self.pubServo.publish(servoData)
         self.rate.sleep()
         return self.handle_output()
     def handle_output(self): 
@@ -196,7 +196,7 @@ class runModel:
         probes = p.get_probes()
         self.start_time = rospy.Time.now()
         try:
-            for i in range(5000): 
+            for i in range(6000): 
                 self.current_time = (rospy.Time.now() - self.start_time).to_sec() #(time.time() - self.start_time) #(rospy.Time.now() - self.start_time).to_sec()
                 self.timeSeries = np.append(self.timeSeries, self.current_time)
                 sim.step()

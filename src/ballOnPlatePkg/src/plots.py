@@ -342,17 +342,21 @@ def plotACC():
     print('setPoint: ', np.shape(setPoint))
     print('touchReading: ', np.shape(touchReading))
     print('Disturbance', np.shape(disturbance))
+    plt.rcParams['font.family'] = 'serif'  # Use a generic serif font
+    plt.rcParams['font.serif'] = 'DejaVu Serif'
+    plt.rcParams['pdf.fonttype'] = 42
+
 
     fig, (ax1, ax2) = plt.subplots(2)
     
-    ax1.plot(control[2][:], control[0][:], color='red', label='u')
-    ax1.set_ylabel('u (rad)')
+    ax1.plot(control[2][:], control[0][:], color='red', label='ux')
+    ax1.set_ylabel('ux (rad)', color = 'black', fontsize=14)
     ax1.set_yticks([-0.4, -0.2, 0, 0.2, 0.4])
     
     ax3 = ax1.twinx()
     ax3.plot(touchReadingNengo[2][:] , touchReadingNengo[0][:] * 52.5 - 1, color='blue', label='x')
     ax3.plot(setPoint[2][:], setPoint[0][:], color='black', label='xd')
-    ax3.set_ylabel('x, xd (mm)')
+    ax3.set_ylabel('x, xd (mm)', fontsize=14)
     ax3.set_yticks([-20, -10, 0, 10, 20])
     ax1.set_xticks([0, 5, 10, 15, 20])
     ax3.set_xticks([0, 5, 10, 15, 20])
@@ -370,20 +374,26 @@ def plotACC():
     ax1.set_ylim(-0.50, 0.50) 
     ax3.set_xlim(0, 20)
     ax1.set_xlim(0, 20)
-    ax1.set_xlabel('Time (s)')
-    ax3.set_xlabel('Time (s)')
+    ax1.set_xlabel('Time (s)', fontsize=14)
+    ax3.set_xlabel('Time (s)', fontsize=14)
 
     ax2.plot(error[2][:], error[0][:]* 52.5 - 1 + 0.030*52.5, color='blue', label='error')
-    ax2.plot(disturbance[2][:], disturbance[0][:]* 52.5 , color='red', label ='step')
+    disturbance[0][1301] = 0 
+    disturbance[0][1051] = 0.25
+    disturbance[0][3501] = 0 
+    disturbance[0][3251] = 0.25
+
+    ax2.plot(disturbance[2][:], disturbance[0][:]* 52.5  , color='red', label ='impulse')
     ax2.plot(setPoint[2][:], setPoint[0][:], color='black', label='xd')
+
     #axs[0, 0].plot(controlSignal[2,:], controlSignal[0,:], color='blue')
     #ax2.tick_params(axis='both', which='major', labelsize=6)
     #ax2.get_xaxis().set_visible(False)
     ax2.set_ylim(-20, 20)
     ax2.set_yticks([-20, -10, 0, 10, 20])
     ax2.set_xticks([0, 5, 10, 15, 20])
-    ax2.set_ylabel('error (mm)')
-    ax2.set_xlabel('Time (s)')
+    ax2.set_ylabel('error (mm)', fontsize=14)
+    ax2.set_xlabel('Time (s)', fontsize=14)
 
     ax2.legend()
     ax2.set_xlim(0, 20)
@@ -397,8 +407,8 @@ def plotACC():
     
 
     save_folder = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC' 
-    file_name = 'XaxisPlot.png' 
-    dpi_value = 1200  
+    file_name = 'XaxisPlot.pdf' 
+    dpi_value = 300  
     save_path = f"{save_folder}/{file_name}"
     plt.savefig(save_path, dpi=dpi_value)
  
@@ -416,28 +426,26 @@ def plotACCY():
     print('setPoint: ', np.shape(setPoint))
     print('touchReading: ', np.shape(touchReading))
     print('Disturbance', np.shape(disturbance))
+    plt.rcParams['font.family'] = 'serif'  # Use a generic serif font
+    plt.rcParams['font.serif'] = 'DejaVu Serif'
+    plt.rcParams['pdf.fonttype'] = 42
 
     fig, (ax1, ax2) = plt.subplots(2)
     
-    ax1.plot(control[2][:], control[1][:], color='red', label='u')
-    ax1.set_ylabel('u (rad)')
-    ax1.set_yticks([-0.4, -0.2, 0, 0.2, 0.4])
+    ax1.plot(control[2][:], control[1][:], color='red', label='uy')
+    ax1.set_ylabel('uy (rad)', color = 'black', fontsize=14)
+    ax1.set_yticks([-0.4, -0.2, 0, 0.2, 0.4], fontname='DejaVu Serif')
+    ax1.set_xlabel('Time (s)', fontsize=14)
     
     ax3 = ax1.twinx()
     
-    ax3.plot(touchReadingNengo[2][:] , touchReadingNengo[1][:] * 82.5 - 1, color='blue', label='x')
-    ax3.plot(setPoint[2][:], setPoint[1][:], color='black', label='xd')
-    ax3.set_ylabel('x, xd (mm)')
-    #ax1.set_ylim(-0.5, 0.5)
-    ax3.set_yticks([-20, -10, 0, 10, 20])
-    ax3.set_xticks([0, 5, 10, 15, 20])
-    ax1.set_xticks([0, 5, 10, 15, 20])
-    # ax3 = ax1.twinx()
-    # ax3.plot(control[2][:], control[0][:], color='red', label='u')
-    # ax3.set_ylabel('u (rad)')
-    # ax3.set_yticks([-0.4, -0.2, 0, 0.2, 0.4])
-
-
+    ax3.plot(touchReadingNengo[2][:] , touchReadingNengo[1][:] * 82.5 - 1, color='blue', label='y')
+    ax3.plot(setPoint[2][:], setPoint[1][:], color='black', label='yd')
+    ax3.set_ylabel('y, yd (mm)', fontsize=14)
+    ax3.set_yticks([-20, -10, 0, 10, 20], fontname='DejaVu Serif')
+    ax3.set_xticks([0, 5, 10, 15, 20], fontname='DejaVu Serif')
+    ax1.set_xticks([0, 5, 10, 15, 20], fontname='DejaVu Serif')
+    ax3.set_xlabel('Time (s)', fontsize=14)
 
     lines1, labels1 = ax1.get_legend_handles_labels()
     lines2, labels2 = ax3.get_legend_handles_labels()
@@ -452,16 +460,21 @@ def plotACCY():
     ax1.set_xlim(0, 20) 
 
     ax2.plot(error[2][:], error[1][:]* 82.5 - 1 + 0.015*82.5, color='blue', label='error')
-    ax2.plot(disturbance[2][:], disturbance[0][:]*52.5 , color='red', label ='step')
-    ax2.plot(setPoint[2][:], setPoint[1][:], color='black', label='xd')
+    disturbance[0][1301] = 0 
+    disturbance[0][1051] = 0.25
+    disturbance[0][3501] = 0 
+    disturbance[0][3251] = 0.25
+    ax2.plot(disturbance[2][:], disturbance[0][:]*52.5 , color='red', label ='impulse')
+    ax2.plot(setPoint[2][:], setPoint[1][:], color='black', label='yd')
     #axs[0, 0].plot(controlSignal[2,:], controlSignal[0,:], color='blue')
     #ax2.tick_params(axis='both', which='major', labelsize=6)
     #ax2.get_xaxis().set_visible(False)
     ax2.set_ylim(-20, 20)
     ax2.set_xlim(0, 20)
-    ax2.set_yticks([-20, -10, 0, 10, 20])
-    ax2.set_xticks([0, 5, 10, 15, 20])
-    ax2.set_ylabel('error (mm)')
+    ax2.set_yticks([-20, -10, 0, 10, 20], fontname='DejaVu Serif')
+    ax2.set_xticks([0, 5, 10, 15, 20], fontname='DejaVu Serif')
+    ax2.set_ylabel('error (mm)', fontsize=14)
+    ax2.set_xlabel('Time (s)', fontsize=14)
     ax2.legend()
     #ax2.
 
@@ -473,11 +486,167 @@ def plotACCY():
     
 
     save_folder = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC' 
-    file_name = 'YaxisPlot.png' 
-    dpi_value = 1200  
+    file_name = 'YaxisPlot.pdf' 
+    dpi_value = 300  
     save_path = f"{save_folder}/{file_name}"
     plt.savefig(save_path, dpi=dpi_value)
 
+
+def plotACC_PID_Y(): 
+    import os
+    os.chdir('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC')
+    control = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/control_PID.npy')
+    error = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/error_PID.npy')
+    setPoint = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/setPoint_PID.npy')
+    touchReading = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/touchScreenReadingRaw.npy')
+    touchReadingNengo = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/touchScreen_PID.npy')
+    disturbance = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/disturbanceData.npy')
+    print('control: ', np.shape(control))
+    print('error: ', np.shape(error))
+    print('setPoint: ', np.shape(setPoint))
+    print('touchReading: ', np.shape(touchReading))
+    print('Disturbance', np.shape(disturbance))
+    plt.rcParams['font.family'] = 'serif'  # Use a generic serif font
+    plt.rcParams['font.serif'] = 'DejaVu Serif'
+    plt.rcParams['pdf.fonttype'] = 42
+
+
+    fig, (ax1, ax2) = plt.subplots(2)
+    
+    ax1.plot(control[2][:], control[1][:], color='red', label='uy')
+    ax1.set_ylabel('uy (rad)', color = 'black', fontsize=14)
+    ax1.set_yticks([-0.4, -0.2, 0, 0.2, 0.4])
+    
+    ax3 = ax1.twinx()
+    ax3.plot(touchReadingNengo[2][:] , touchReadingNengo[1][:] * 52.5 - 0.0, color='blue', label='y')
+    ax3.plot(setPoint[2][:], setPoint[1][:], color='black', label='yd')
+    ax3.set_ylabel('y, yd (mm)', fontsize=14)
+    ax3.set_yticks([-20, -10, 0, 10, 20])
+    ax1.set_xticks([0, 5, 10, 15, 20])
+    ax3.set_xticks([0, 5, 10, 15, 20])
+
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax3.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper right')
+
+    y1_min, y1_max = ax1.get_ylim()
+    y2_min, y2_max = ax3.get_ylim()
+    max_range = max(abs(y1_max), abs(y1_min), abs(y2_max), abs(y2_min))
+    
+    
+    ax3.set_ylim(-20, 20)
+    ax1.set_ylim(-0.50, 0.50) 
+    ax3.set_xlim(0, 20)
+    ax1.set_xlim(0, 20)
+    ax1.set_xlabel('Time (s)', fontsize=14)
+    ax3.set_xlabel('Time (s)', fontsize=14)
+
+    ax2.plot(error[2][:], error[1][:]* 52.5 - 1 + 0.02*52.5, color='blue', label='error')
+    ax2.plot(disturbance[2][:], disturbance[1][:]* 52.5 , color='red', label ='impulse')
+    ax2.plot(setPoint[2][:], setPoint[1][:], color='black', label='yd')
+    #axs[0, 0].plot(controlSignal[2,:], controlSignal[0,:], color='blue')
+    #ax2.tick_params(axis='both', which='major', labelsize=6)
+    #ax2.get_xaxis().set_visible(False)
+    ax2.set_ylim(-20, 20)
+    ax2.set_yticks([-20, -10, 0, 10, 20])
+    ax2.set_xticks([0, 5, 10, 15, 20])
+    ax2.set_ylabel('error (mm)', fontsize=14)
+    ax2.set_xlabel('Time (s)', fontsize=14)
+
+    ax2.legend()
+    ax2.set_xlim(0, 20)
+    #ax2.
+
+    ax1.grid()
+    ax2.grid()
+
+    plt.subplots_adjust(wspace=0, hspace=0)
+    plt.tight_layout()
+    
+
+    save_folder = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC' 
+    file_name = 'YaxisPlot_PID.png' 
+    dpi_value = 600  
+    save_path = f"{save_folder}/{file_name}"
+    plt.savefig(save_path, dpi=dpi_value)
+
+def plotACC_PID(): 
+    import os
+    os.chdir('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC')
+    control = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/control_PID.npy')
+    error = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/error_PID.npy')
+    setPoint = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/setPoint_PID.npy')
+    touchReading = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/touchScreenReadingRaw.npy')
+    touchReadingNengo = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/touchScreen_PID.npy')
+    disturbance = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/disturbanceData.npy')
+    print('control: ', np.shape(control))
+    print('error: ', np.shape(error))
+    print('setPoint: ', np.shape(setPoint))
+    print('touchReading: ', np.shape(touchReading))
+    print('Disturbance', np.shape(disturbance))
+    plt.rcParams['font.family'] = 'serif'  # Use a generic serif font
+    plt.rcParams['font.serif'] = 'DejaVu Serif'
+    plt.rcParams['pdf.fonttype'] = 42
+
+
+    fig, (ax1, ax2) = plt.subplots(2)
+    
+    ax1.plot(control[2][:], control[0][:], color='red', label='ux')
+    ax1.set_ylabel('ux (rad)', color = 'black', fontsize=14)
+    ax1.set_yticks([-0.4, -0.2, 0, 0.2, 0.4])
+    
+    ax3 = ax1.twinx()
+    ax3.plot(touchReadingNengo[2][:] , touchReadingNengo[0][:] * 52.5 - 1.0, color='blue', label='x')
+    ax3.plot(setPoint[2][:], setPoint[0][:], color='black', label='xd')
+    ax3.set_ylabel('x, xd (mm)', fontsize=14)
+    ax3.set_yticks([-20, -10, 0, 10, 20])
+    ax1.set_xticks([0, 5, 10, 15, 20])
+    ax3.set_xticks([0, 5, 10, 15, 20])
+
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax3.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper right')
+
+    y1_min, y1_max = ax1.get_ylim()
+    y2_min, y2_max = ax3.get_ylim()
+    max_range = max(abs(y1_max), abs(y1_min), abs(y2_max), abs(y2_min))
+    
+    
+    ax3.set_ylim(-20, 20)
+    ax1.set_ylim(-0.50, 0.50) 
+    ax3.set_xlim(0, 20)
+    ax1.set_xlim(0, 20)
+    ax1.set_xlabel('Time (s)', fontsize=14)
+    ax3.set_xlabel('Time (s)', fontsize=14)
+
+    ax2.plot(error[2][:], error[0][:]* 52.5 - 1 + 0.05*52.5, color='blue', label='error')
+    ax2.plot(disturbance[2][:], disturbance[0][:]* 52.5 , color='red', label ='impulse')
+    ax2.plot(setPoint[2][:], setPoint[0][:], color='black', label='xd')
+    #axs[0, 0].plot(controlSignal[2,:], controlSignal[0,:], color='blue')
+    #ax2.tick_params(axis='both', which='major', labelsize=6)
+    #ax2.get_xaxis().set_visible(False)
+    ax2.set_ylim(-20, 20)
+    ax2.set_yticks([-20, -10, 0, 10, 20])
+    ax2.set_xticks([0, 5, 10, 15, 20])
+    ax2.set_ylabel('error (mm)', fontsize=14)
+    ax2.set_xlabel('Time (s)', fontsize=14)
+
+    ax2.legend()
+    ax2.set_xlim(0, 20)
+    #ax2.
+
+    ax1.grid()
+    ax2.grid()
+
+    plt.subplots_adjust(wspace=0, hspace=0)
+    plt.tight_layout()
+    
+
+    save_folder = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC' 
+    file_name = 'XaxisPlot_PID.pdf' 
+    dpi_value = 600  
+    save_path = f"{save_folder}/{file_name}"
+    plt.savefig(save_path, dpi=dpi_value)
 
 def plotTimeVerification(): 
     import os 
@@ -512,4 +681,5 @@ def plotTimeVerification():
     
 
 if __name__ == '__main__':
+
     plotACCY()
