@@ -25,6 +25,7 @@ class servos:
         self.dataServoYPlot = np.array([0, 0])
         self.timeSeries = np.array([0, 0])
         self.disturbance = np.array([0, 0])
+        self.frequency = np.array([0, 0])
 
         self.i = 0 
         self.plot = True
@@ -38,6 +39,7 @@ class servos:
         self.start_time = rospy.Time.now()
     
     def callback(self, msg): 
+        self.currentTime = rospy.Time.now().to_sec()
         self.i = self.i + 1
         self.datauxPlot = np.append(self.datauxPlot, msg.data[0])
         self.datauyPlot = np.append(self.datauyPlot, msg.data[1])
@@ -58,6 +60,8 @@ class servos:
             self.disturbance = np.append(self.disturbance, np.array([0]))
         self.current_time = (rospy.Time.now() - self.start_time).to_sec()
         self.timeSeries = np.append(self.timeSeries, self.current_time)
+        self.deltaTime = rospy.Time.now().to_sec() - self.currentTime 
+        self.frequency = np.append(self.frequency, 1/(self.deltaTime))
         
             
 
@@ -69,10 +73,12 @@ class servos:
                 self.rate.sleep()
                 #print('Hello')
             if self.plot: 
-                saveArrayACC(self.datauxPlot, self.datauyPlot, self.timeSeries, 'controlSignalData')
-                saveArrayACC(self.dataServoXPlot, self.dataServoYPlot, self.timeSeries, 'servoSignalData')
-                saveTimeArrayServos(self.timeSeries, 'ServoTiming')
-                saveArrayACC(self.disturbance, self.disturbance, self.timeSeries, 'disturbanceData')
+                #saveArrayACC(self.datauxPlot, self.datauyPlot, self.timeSeries, 'controlSignalData')
+                #saveArrayACC(self.dataServoXPlot, self.dataServoYPlot, self.timeSeries, 'servoSignalData')
+                #aveTimeArrayServos(self.timeSeries, 'ServoTiming')
+                saveArray(self.disturbance, self.disturbance, self.timeSeries, 'disturbanceData')
+                print(np.shape(self.frequency))
+                saveArray(self.frequency, self.frequency, self.timeSeries, 'frequencyServos')
                 #plotTwoAxis(self.datauxPlot, self.datauyPlot, self.timeSeries, 'Control Signal', 'Time (s)', 'Control Signal Value', 'controlSignal')
                 #plotTwoAxis(self.dataServoXPlot, self.dataServoYPlot, self.timeSeries, 'Mapped Signal Servo', 'Time (s)', 'Servo Signal', 'servoSignal', limit=False) 
         except rospy.ROSInterruptException: 

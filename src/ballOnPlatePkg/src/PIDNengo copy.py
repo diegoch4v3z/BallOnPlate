@@ -39,85 +39,23 @@ class DelayY:
 # The sim.step should be in the callback function of the 
 
 class PIDNengo: 
-    def __init__(self): 
-        # import PID Nengo Constants 
+    def __init__(self, object): 
+        # Import PID Nengo Constants 
         c = Constants()
         self.kPID = c.PIDNengoConstants()
-        self.kPIDn = c.PIDConstants()
-        # build Nengo model
+        self.i = 0
         self.buildNengoModel(probe = True)
-        self.sim = nengo.Simulator(self.model, dt=0.007, optimize=True)
-        self.probes = self.get_probes()
-        # initialize rospy 
-        
-        rospy.init_node('PIDNengo', anonymous=True)
-        self.sub = rospy.Subscriber('touchscreenData', Float32MultiArray, callback=self.callback)
-        self.pubServo = rospy.Publisher('servoData', Float32MultiArray, queue_size=10)
-        self.rate = rospy.Rate(240)
-
-        # data storage arrays
-        self.x = 0              # information from the touchscreen will be stored on x and y 
-        self.y = 0
-        self.Ix = np.array([0, 0])
-        self.Iy = np.array([0, 0])
-        self.timeSeries = np.array([]) 
-        self.frequency = np.array([])
-        self.globalTimeSeries = np.array([])
-        self.globalTime = rospy.Time.now() 
-        self.start_time = rospy.Time.now()
-    def __call__(self, t, values): 
-        servoData = Float32MultiArray()
-        servoData.data = [values[0], values[1]]
-        self.pubServo.publish(servoData)
-        self.rate.sleep()
-        return self.handle_output()
-    def handle_output(self): 
-        self.Ix = np.append(self.Ix, self.x)
-        self.Iy = np.append(self.Iy, self.y)
-        if len(self.Ix) > self.kPID[7] and len(self.Iy) > self.kPID[7]: 
-            self.xyFiltered = self.movingAverage(self.Ix, self.Iy, self.kPIDn[7],self.kPIDn[8])
-            self.Ix[-1] = self.xyFiltered[0]
-            self.Iy[-1] = self.xyFiltered[1]
-        return [self.Ix[-1], self.Iy[-1]]
-
-    def callback(self, msg):
-        self.globalTime = (rospy.Time.now() - self.start_time) - self.globalTime
-        print(self.globalTime)
-        self.globalTimeSeries = np.append(self.globalTimeSeries, self.globalTime)   
-        self.currentTime = rospy.Time.now()
-        self.x = msg.data[0]
-        self.y = msg.data[1]
-        self.current_time = (rospy.Time.now() - self.start_time).to_sec()
-        self.timeSeries = np.append(self.timeSeries, self.current_time)
-        self.sim.step()
-        self.deltaTime = (rospy.Time.now() - self.currentTime).to_sec()
-        self.frequency = np.append(self.frequency, 1/self.deltaTime)
-    
-
-    # def __call__(self, t, values): 
-    #     servoData = Float32MultiArray()
-    #     servoData.data = [values[0], values[1]]
-    #     #self.pubServo.publish(servoData)
-    #     self.rate.sleep()
-    #     return self.handle_output()
-    
-    def movingAverage(self, Ix, Iy, kernelSize, kernelDelay): 
-        kernel = np.ones(kernelSize)/kernelSize
-        dataConvolvedX = np.convolve(Ix[-kernelSize:], kernel, mode = 'same')
-        dataConvolvedY = np.convolve(Iy[-kernelSize:], kernel, mode = 'same')
-        x = dataConvolvedX[kernelDelay]
-        y = dataConvolvedY[kernelDelay]
-        return [x, y]
-     
     def buildNengoModel(self, probe = False): 
         self.model = nengo.Network(label='PID', seed=1)
+            
         NType= nengo.LIF()
         dt = 0.005
         delayX = DelayX(1, timesteps=int(0.05 / 0.005))
         delayY = DelayY(1, timesteps=int(0.05 / 0.005))
         with self.model:
             # Nodes
-            posXY_node = nengo.Node(self.__call__, size_out=2, size_in=2)
+            self.PIDNengoNode = run()
+            posXY_node = nengo.Node(self.PIDNengoNode, size_out=2, size_in=2)
             r = 0.90
             #setpoint = nengo.Node(lambda t: [r*np.cos(0.5*t),0])
             setpoint = nengo.Node([0, 0])
@@ -191,12 +129,8 @@ class PIDNengo:
                 self.probesd_e_y = nengo.Probe(d_e_y, synapse=0.1)
                 self.probesu = nengo.Probe(u, synapse=0.1)
                 self.probesuNot = nengo.Probe(uProbe, synapse=0.1)
-    def run(self): 
-        try: 
-            while not rospy.is_shutdown(): 
-                self.rate.sleep()
-        except rospy.ROSInterruptException: 
-            pass     
+                
+        
         
     def runNode(self): 
         try: 
@@ -252,13 +186,68 @@ class touchScreenCoordinates:
     def returnXYValues(self):
         [self.Ix, self.Iy]
     
+class run: 
+    def __init__(self):
+        # ROS
+        rospy.init_node('PIDNengo', anonymous=True)
+        rospy.init_node('PIDNengo', anonymous=True)
+        self.sub = rospy.Subscriber('touchscreenData', Float32MultiArray, callback=self.callback)
+        self.pubServo = rospy.Publisher('servoData', Float32MultiArray, queue_size=10)
+        self.rate = rospy.Rate(240)
+        self.start_time = rospy.Time.now()
+
+        self.x = 0
+        self.y = 0
+        self.Ix = np.array([0, 0])
+        self.Iy = np.array([0, 0])
+        self.timeSeries = np.array([])
+        
+        c = Constants()
+        self.kPID = c.PIDConstants()
+
+        # initialization of the network
+
+        controller = PIDNengo()
+        model = controller.get_model()
+        self.sim = nengo.Simulator(model, dt=0.005, optimize=True)
+        self.probes = controller.get_probes()
+
+    def callback(self, msg): 
+        self.x = msg.data[0]
+        self.y = msg.data[0]
+        self.currentTime = (rospy.Time.now() -  self.start_time).to_sec()
+        self.timeSeries = np.append(self.timeSeries, self.current_time)
+        self.sim.step()
+        
+
+    def __call__(self, t, values): 
+        servoData = Float32MultiArray()
+        servoData.data = [values[0], values[1]]
+        self.rate.sleep()
+        return self.handle_output()
+    def handle_output(self): 
+        self.Ix = np.append(self.Ix, self.x)
+        self.Iy = np.append(self.Iy, self.y)
+        if len(self.Ix) > self.kPID[7] and len(self.Iy) > self.kPID[7]: 
+            self.xyFiltered = self.movingAverage(self.Ix, self.Iy, self.kPID[7],self.kPID[8])
+            self.Ix[-1] = self.xyFiltered[0]
+            self.Iy[-1] = self.xyFiltered[1]
+        return [self.Ix[-1], self.Iy[-1]]
+    def movingAverage(self, Ix, Iy, kernelSize, kernelDelay): 
+        kernel = np.ones(kernelSize)/kernelSize
+        dataConvolvedX = np.convolve(Ix[-kernelSize:], kernel, mode = 'same')
+        dataConvolvedY = np.convolve(Iy[-kernelSize:], kernel, mode = 'same')
+        x = dataConvolvedX[kernelDelay]
+        y = dataConvolvedY[kernelDelay]
+        return [x, y]
+
 
 class runModel: 
     def __init__(self):
         self.timeSeries = np.array([])
         p = PIDNengo()
         model = p.get_model()
-        sim = nengo.Simulator(model, dt=0.001, optimize=True)
+        sim = nengo.Simulator(model, dt=0.005, optimize=True)
         # 0.001, 0.002, 0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25
         # Working one 0.005
         #self.rate = rospy.Rate(240)
@@ -295,8 +284,7 @@ class runModel:
         saveArrayACC(dataProbe2[:, 0], dataProbe3[:, 0], self.timeSeries, 'errorNengo')
         #saveArrayACC(dataProbe3[:, 0], self.timeSeries, 'errorNengoY')
         sys.exit()
-
-def send_interrupt_to_other_code():
+def send_interrupt_to_other_code(self):
     # Assuming the other code's process name is "other_code.py"
     import os
     process_name = "PID.py"
@@ -305,27 +293,10 @@ def send_interrupt_to_other_code():
     os.system("pkill -SIGINT -f {}".format(process_name1))
 
 if __name__ == '__main__':
-    p = PIDNengo()
-    try: 
-        while not rospy.is_shutdown(): 
-            p.run()
-        probes = p.get_probes()
-        sim = p.sim
-        timeseries = p.timeSeries
-        frequency = p.frequency
-        dataProbe0 = sim.data[probes[0]]
-        dataProbe1 = sim.data[probes[1]]
-        dataProbe2 = sim.data[probes[2]]
-        dataProbe3 = sim.data[probes[3]]
-        dataProbe4 = sim.data[probes[4]]
-        dataProbe5 = sim.data[probes[5]]
-        dataProbe6 = sim.data[probes[6]]
-        saveArray(dataProbe0[:, 0], dataProbe0[:, 1], timeseries, 'touchScreenReadingNengo')
-        saveArray(dataProbe1[:, 0], dataProbe1[:, 1], timeseries, 'setPointEnsembleNengo')
-        saveArray(dataProbe2[: ,0], dataProbe3[:, 0], timeseries, 'errorNengo')
-        saveArray(dataProbe4[:, 0], dataProbe5[:, 0], timeseries, 'derivativeNengo')
-        saveArray(dataProbe6[:, 0], dataProbe6[:, 1], timeseries, 'controlNengo')
-        saveArray(frequency, frequency, timeseries, 'frequencyNengo')
+
+    try:
+        while not rospy.is_shutdown():
+            run()
         send_interrupt_to_other_code()
     except rospy.ROSInterruptException: 
         pass

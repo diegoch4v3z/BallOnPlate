@@ -23,6 +23,7 @@ class touchScreen:
         self.dataXPlotFiltered = np.array([])
         self.dataYPlotFiltered = np.array([])
         self.timeSeries = np.array([])
+        self.frequency = np.array([])
         self.Ix = np.array([])
         self.Iy = np.array([])
         self.plot = True
@@ -89,6 +90,7 @@ class touchScreen:
 
         try:
             while not rospy.is_shutdown():
+                self.current_time = (rospy.Time.now()).to_sec()
                 data = Float32MultiArray()
                 coordinate = self.getData(self.dev, self.ep_in, self.ep_out)
                 self.dataXPlot = np.append(self.dataXPlot, coordinate[0])
@@ -103,14 +105,19 @@ class touchScreen:
                 self.pub.publish(data)
                 self.rate.sleep()
 
-                self.current_time = (rospy.Time.now()).to_sec()
-                self.timeSeries = np.append(self.timeSeries, self.current_time)
-                self.start_time = rospy.Time.now()
+    
+                #self.timeSeries = np.append(self.timeSeries, self.current_time)
+                self.deltaTime = rospy.Time.now().to_sec() - self.current_time
+                self.timeSeries = np.append(self.timeSeries, self.current_time - self.start_time.to_sec())
+                self.frequency = np.append(self.frequency, 1/(self.deltaTime))
+                
             if self.plot: 
                 #saveArrayLQR(self.dataXPlot, self.dataYPlot, self.timeSeries, 'touchScreenReadingRaw')
                 #saveArrayLQR(self.dataXPlotFiltered, self.dataYPlotFiltered, self.timeSeries[:len(self.dataXPlotFiltered)], 'touchScreenReadingFiltered')
-                saveTimeArrayTouchscreen(self.timeSeries, 'touchScreenReadingTiming')
-                saveArrayACC(self.dataXPlot, self.dataYPlot, self.timeSeries, 'touchScreenReadingRaw')
+                #saveTimeArrayTouchscreen(self.timeSeries, 'touchScreenReadingTiming')
+                #saveArrayACC(self.dataXPlot, self.dataYPlot, self.timeSeries, 'touchScreenReadingRaw')
+                saveArray(self.dataXPlot, self.dataYPlot, self.timeSeries, 'touchScreenReadingRaw')
+                saveArray(self.frequency, self.frequency, self.timeSeries, 'touchScreenReadingFrequency')
                 
         except rospy.ROSInterruptException: 
             pass

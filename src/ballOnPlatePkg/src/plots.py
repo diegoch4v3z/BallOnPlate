@@ -88,7 +88,7 @@ def plotOneData(data0, timestamp0, title, xLabel, yLabel, figureName, label1, li
 
 def saveArray(data1, data2, timestamp, filename): 
     current_dir = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src'
-    folder_path = os.path.join(current_dir, 'savedArrays')
+    folder_path = os.path.join(current_dir, 'measurements')
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
     array_path = os.path.join(folder_path, f'{filename}.npy')
@@ -414,13 +414,13 @@ def plotACC():
  
 def plotACCY():
     import os
-    os.chdir('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC')
-    control = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/controlNengo.npy')
-    error = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/errorNengo.npy')
-    setPoint = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/setPointEnsembleNengo.npy')
-    touchReading = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/touchScreenReadingRaw.npy')
-    touchReadingNengo = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/touchScreenReadingNengo.npy')
-    disturbance = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/ArraysACC/disturbanceData.npy')
+    os.chdir('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/measurements')
+    control = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/measurements/controlNengo.npy')
+    error = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/measurements/errorNengo.npy')
+    setPoint = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/measurements/setPointEnsembleNengo.npy')
+    touchReading = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/measurements/touchScreenReadingRaw.npy')
+    touchReadingNengo = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/measurements/touchScreenReadingNengo.npy')
+    disturbance = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/measurements/disturbanceData.npy')
     print('control: ', np.shape(control))
     print('error: ', np.shape(error))
     print('setPoint: ', np.shape(setPoint))
@@ -677,9 +677,154 @@ def plotTimeVerification():
     plt.show()
 
     print(f"Figure saved as {file_path}")
+
+def plot(): 
+    os.chdir('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/measurements')
+    control = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/measurements/controlNengo.npy')
+    error = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/measurements/errorNengo.npy')
+    setpoint = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/measurements/setPointEnsembleNengo.npy')
+    touchReadingNengo = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/measurements/touchScreenReadingNengo.npy')
+    disturbance = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/measurements/disturbanceData.npy')
+    touchReading = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/measurements/touchScreenReadingRaw.npy')
+    frequencyTouchscreen = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/measurements/touchScreenReadingFrequency.npy')
+    frequencyNengo = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/measurements/frequencyNengo.npy')
+    frequencyServo = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/measurements/frequencyServos.npy')
+    plt.rcParams['font.family'] = 'serif'  # Use a generic serif font
+    plt.rcParams['font.serif'] = 'DejaVu Serif'
+    plt.rcParams['pdf.fonttype'] = 42
+    # X - Axis
+    fig, (ax1, ax2) = plt.subplots(2)
+    # plot 1
+    ax1.plot(control[2][:], control[0][:], color='red', label='ux')
+    ax1.set_ylabel('ux (rad)', color = 'black', fontsize=14)
+    ax1.set_yticks([-0.4, -0.2, 0, 0.2, 0.4])
+
+    ax3 = ax1.twinx()
+    ax3.plot(touchReadingNengo[2][:] , touchReadingNengo[0][:] * 52.5 - 1, color='blue', label='x')
+    ax3.plot(setpoint[2][:], setpoint[0][:], color='black', label='xd')
+    ax3.set_ylabel('x, xd (mm)', fontsize=14)
+    ax3.set_yticks([-20, -10, 0, 10, 20])
+    ax1.set_xticks([0, 5, 10, 15, 20])
+    ax3.set_xticks([0, 5, 10, 15, 20])
+
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax3.get_legend_handles_labels()
+
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper right')
+    
+    y1_min, y1_max = ax1.get_ylim()
+    y2_min, y2_max = ax3.get_ylim()
+    
+    ax3.set_ylim(-20, 20)
+    ax1.set_ylim(-0.50, 0.50)
+    ax3.set_xlim(0, 20)
+    ax1.set_xlim(0, 20)
+    ax1.set_xlabel('Time (s)', fontsize=14)
+    ax3.set_xlabel('Time (s)', fontsize=14)
+
+    # plot 2
+    ax2.plot(error[2][:], error[0][:]* 52.5 - 1 + 0.030*52.5, color='blue', label='error')
+    ax2.plot(setpoint[2][:], setpoint[0][:], color='black', label='xd')
+    ax2.plot(disturbance[2][:], disturbance[0][:]* 52.5  , color='red', label ='impulse')
+    ax2.set_ylim(-20, 20)
+    ax2.set_yticks([-20, -10, 0, 10, 20])
+    ax2.set_xticks([0, 5, 10, 15, 20])
+    ax2.set_ylabel('error (mm)', fontsize=14)
+    ax2.set_xlabel('Time (s)', fontsize=14)
+    ax2.legend()
+    ax2.set_xlim(0, 20)
+    
+    ax1.grid()
+    ax2.grid()
+    plt.subplots_adjust(wspace=0, hspace=0)
+    plt.tight_layout()
+
+    savefolder = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/measurementPlots'
+    file_name = 'XaxisPlot.png'
+    dpi_value = 300 
+    save_path = f"{savefolder}/{file_name}"
+    plt.savefig(save_path, dpi=dpi_value)
+
+    # Y - Axis
+    fig, (ax1, ax2) = plt.subplots(2)
+    # plot 1
+    ax1.plot(control[2][:], control[1][:], color='red', label='uy')
+    ax1.set_ylabel('uy (rad)', color = 'black', fontsize=14)
+    ax1.set_yticks([-0.4, -0.2, 0, 0.2, 0.4])
+
+    ax3 = ax1.twinx()
+    ax3.plot(touchReadingNengo[2][:] , touchReadingNengo[1][:] * 52.5 - 1, color='blue', label='y')
+    ax3.plot(setpoint[2][:], setpoint[1][:], color='black', label='yd')
+    ax3.set_ylabel('y, yd (mm)', fontsize=14)
+    ax3.set_yticks([-20, -10, 0, 10, 20])
+    ax1.set_xticks([0, 5, 10, 15, 20])
+    ax3.set_xticks([0, 5, 10, 15, 20])
+
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax3.get_legend_handles_labels()
+
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper right')
+    
+    y1_min, y1_max = ax1.get_ylim()
+    y2_min, y2_max = ax3.get_ylim()
+    
+    ax3.set_ylim(-20, 20)
+    ax1.set_ylim(-0.50, 0.50)
+    ax3.set_xlim(0, 20)
+    ax1.set_xlim(0, 20)
+    ax1.set_xlabel('Time (s)', fontsize=14)
+    ax3.set_xlabel('Time (s)', fontsize=14)
+
+    # plot 2
+    ax2.plot(error[2][:], error[1][:]* 52.5 - 1 + 0.015*52.5, color='blue', label='error')
+    ax2.plot(setpoint[2][:], setpoint[1][:], color='black', label='yd')
+    ax2.plot(disturbance[2][:], disturbance[1][:]* 52.5  , color='red', label ='impulse')
+    ax2.set_ylim(-20, 20)
+    ax2.set_yticks([-20, -10, 0, 10, 20])
+    ax2.set_xticks([0, 5, 10, 15, 20])
+    ax2.set_ylabel('error (mm)', fontsize=14)
+    ax2.set_xlabel('Time (s)', fontsize=14)
+    ax2.legend()
+    ax2.set_xlim(0, 20)
+    
+    ax1.grid()
+    ax2.grid()
+    plt.subplots_adjust(wspace=0, hspace=0)
+    plt.tight_layout()
+
+    savefolder = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/measurementPlots'
+    file_name = 'YaxisPlot.png'
+    dpi_value = 300 
+    save_path = f"{savefolder}/{file_name}"
+    plt.savefig(save_path, dpi=dpi_value)
+
+    fig, (ax1, ax2) = plt.subplots(2)
+    # Plot of the frequency of the touchscreen, nengo and servo
+    ax1.plot(frequencyNengo[2][:], frequencyNengo[0][:], color='blue', label='Nengo')
+    ax1.plot(frequencyServo[2][:], frequencyServo[0][:], color='green', label='Servo')
+    ax1.plot(frequencyTouchscreen[2][:], frequencyTouchscreen[0][:], color='red', label='Touchscreen')
+
+    min = np.min([len(frequencyServo[0][:]), len(frequencyNengo[0][:]), len(frequencyTouchscreen[0][:])])
+    totalFreq = 1/frequencyTouchscreen[0][:min] + 1/frequencyNengo[0][:min] + 1/frequencyServo[0][:min] 
+    ax2.plot(frequencyNengo[2][:min], 1/totalFreq, color='blue', label='Total Frequency')
+    ax2.set_xlim(0, 20)
+    ax1.set_xlim(0, 20)
+    ax1.set_ylim(0, 400)
+    ax2.legend()
+    ax1.legend()
+
+    
+    plt.subplots_adjust(wspace=0, hspace=0)
+    plt.tight_layout()
+
+    savefolder = '/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/measurementPlots'
+    file_name = 'frequency.png'
+    dpi_value = 300 
+    save_path = f"{savefolder}/{file_name}"
+    plt.savefig(save_path, dpi=dpi_value)
+
     
     
 
 if __name__ == '__main__':
-
-    plotACCY()
+    plot()
