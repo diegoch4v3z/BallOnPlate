@@ -9,8 +9,9 @@ from constants import Constants
 from std_msgs.msg import Float32MultiArray
 from plots import plotTwoAxis, saveArray, saveArray1, saveTimeArray, saveArrayACC
 import numpy as np
-import scipy, datetime, time
-import message_filters
+import scipy, datetime, time, os
+import message_filters, nengo_loihi
+import nengo_loihi.hardware as hardware
 
 
 class DelayX: 
@@ -46,13 +47,15 @@ class PIDNengo:
         self.kPIDn = c.PIDConstants()
         # build Nengo model
         self.buildNengoModel(probe = True)
-        self.sim = nengo.Simulator(self.model, dt=0.007, optimize=True)
+        #self.sim = nengo_loihi.Simulator(self.model, dt=0.008, progress_bar=False, target='loihi', hardware_options={"snip_max_spikes_per_step": 300, "n_chips": 2})
+        self.sim = nengo_loihi.Simulator(self.model, dt=0.008, progress_bar=False, target='sim')
         self.probes = self.get_probes()
+        self.queueSize = 10
         # initialize rospy 
         
         rospy.init_node('PIDNengo', anonymous=True)
-        self.sub = rospy.Subscriber('touchscreenData', Float32MultiArray, callback=self.callback)
-        self.pubServo = rospy.Publisher('servoData', Float32MultiArray, queue_size=10)
+        self.sub = rospy.Subscriber('touchscreenData', Float32MultiArray, callback=self.callback, queue_size=1)
+        self.pubServo = rospy.Publisher('servoData', Float32MultiArray, queue_size=self.queueSize)
         self.rate = rospy.Rate(240)
 
         # data storage arrays
@@ -65,10 +68,18 @@ class PIDNengo:
         self.globalTimeSeries = np.array([])
         self.globalTime = rospy.Time.now() 
         self.start_time = rospy.Time.now()
+        self.tn = np.array([])
+        self.t = rospy.Time.now()
+
+        # nengo Loihi 
+        os.environ.update({'KAPOHOBAY': '1'})
+        nengo_loihi.set_defaults()
+        
     def __call__(self, t, values): 
         servoData = Float32MultiArray()
         servoData.data = [values[0], values[1]]
         self.pubServo.publish(servoData)
+        #rospy.loginfo("Published servo control: %s", values)
         self.rate.sleep()
         return self.handle_output()
     def handle_output(self): 
@@ -81,9 +92,11 @@ class PIDNengo:
         return [self.Ix[-1], self.Iy[-1]]
 
     def callback(self, msg):
-        self.globalTime = (rospy.Time.now() - self.start_time) - self.globalTime
-        print(self.globalTime)
-        self.globalTimeSeries = np.append(self.globalTimeSeries, self.globalTime)   
+        #self.globalTime = (rospy.Time.now() - self.start_time) - self.globalTime
+        #print(self.globalTime)
+        #rospy.loginfo("Received Touchscreen Coordinates: %s", str(msg.data))
+        self.tn = np.append(self.tn, (rospy.Time.now() - self.t).to_sec())
+   
         self.currentTime = rospy.Time.now()
         self.x = msg.data[0]
         self.y = msg.data[1]
@@ -111,7 +124,7 @@ class PIDNengo:
      
     def buildNengoModel(self, probe = False): 
         self.model = nengo.Network(label='PID', seed=1)
-        NType= nengo.LIF()
+        NType= nengo_loihi.LoihiLIF()
         dt = 0.005
         delayX = DelayX(1, timesteps=int(0.05 / 0.005))
         delayY = DelayY(1, timesteps=int(0.05 / 0.005))
@@ -127,18 +140,19 @@ class PIDNengo:
             delayNodeY = nengo.Node(delayY.step, size_in=1, size_out=1)
 
             #Ensembles
-            posXY_ensemble = nengo.Ensemble(n_neurons=1, dimensions=2, neuron_type=nengo.Direct(), radius=1.5)
-            setPointEnsemble = nengo.Ensemble(n_neurons=400, dimensions=2, radius = 0.001, neuron_type=NType)
+            posXY_ensemble = nengo.Ensemble(n_neurons=1, dimensions=2, neuron_type=nengo.Direct(), radius=1.5, label='posXY_ensemble') 
+            setPointEnsemble = nengo.Ensemble(n_neurons=400, dimensions=2, radius = 0.1, neuron_type=NType,  label='setPointEnsemble')
             #biasNode = nengo.Node([0.01, 0.01])
-            errorX = nengo.Ensemble(n_neurons=400, dimensions=1, radius=2, neuron_type=NType)
-            errorY = nengo.Ensemble(n_neurons=400, dimensions=1, radius=2, neuron_type=NType)
+            errorX = nengo.Ensemble(n_neurons=400, dimensions=1, radius=2, neuron_type=NType, label = 'errorX')
+            errorY = nengo.Ensemble(n_neurons=400, dimensions=1, radius=2, neuron_type=NType, label = 'errorY')
 
-            d_e_x = nengo.Ensemble(n_neurons=800, dimensions = 1, radius=1, neuron_type=NType)#radius=1)
-            d_e_y = nengo.Ensemble(n_neurons=800, dimensions = 1, radius=1, neuron_type=NType)
+            d_e_x = nengo.Ensemble(n_neurons=800, dimensions = 1, radius=1, neuron_type=NType, label='d_e_x')#radius=1)
+            d_e_y = nengo.Ensemble(n_neurons=800, dimensions = 1, radius=1, neuron_type=NType, label='d_e_y')#radius=1
 
             bias = nengo.Node([0, 0]) #[-0.06, 0
 
-            u = nengo.Ensemble(n_neurons=1, dimensions=2, neuron_type=nengo.Direct(), radius=1) #bias=[0.5], gain=[1.0])
+            u = nengo.Ensemble(n_neurons=1, dimensions=2, neuron_type=nengo.Direct(), radius=1, label='u') #bias=[0.5], gain=[1.0])
+            
 
             nengo.Connection(bias[0], u[0], synapse=None)
 
@@ -146,12 +160,10 @@ class PIDNengo:
             uProbe = nengo.Ensemble(n_neurons=1, dimensions=2, neuron_type=nengo.Direct(), radius=1) 
             nengo.Connection(u[0], uProbe[0], synapse=None)
             nengo.Connection(biasuProbe[0], uProbe[0], synapse=None)
-
             nengo.Connection(u[1], uProbe[1], synapse=None)
             nengo.Connection(biasuProbe[1], uProbe[1], synapse=None)
             # nengo.Connection(biasNode[0], errorX, synapse=None)
             # nengo.Connection(biasNode[1], errorY, synapse=None)
-            
             
 
             # Conections 
@@ -253,48 +265,50 @@ class touchScreenCoordinates:
         [self.Ix, self.Iy]
     
 
-class runModel: 
-    def __init__(self):
-        self.timeSeries = np.array([])
-        p = PIDNengo()
-        model = p.get_model()
-        sim = nengo.Simulator(model, dt=0.001, optimize=True)
-        # 0.001, 0.002, 0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25
-        # Working one 0.005
-        #self.rate = rospy.Rate(240)
+# class runModel: 
+#     def __init__(self):
+#         self.timeSeries = np.array([])
+#         p = PIDNengo()
+#         model = p.get_model()
+#         #sim = nengo.Simulator(model, dt=0.001, optimize=True)
+#         sim = nengo_loihi.Simulator(model, dt=0.007, target='loihi', progress_bar=False hardware_options=)
+#         # 0.001, 0.002, 0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25
+#         # Working one 0.005
+#         #self.rate = rospy.Rate(240)
         
         
-        probes = p.get_probes()
-        self.start_time = rospy.Time.now()
-        try:
-            for i in range(6000): 
-                self.current_time = (rospy.Time.now() - self.start_time).to_sec() #(time.time() - self.start_time) #(rospy.Time.now() - self.start_time).to_sec()
-                self.timeSeries = np.append(self.timeSeries, self.current_time)
-                sim.step()
-                #self.rate.sleep()
-            dataProbe0 = sim.data[probes[0]]
-            dataProbe1 = sim.data[probes[1]]
-            dataProbe2 = sim.data[probes[2]]
-            dataProbe3 = sim.data[probes[3]]
-            dataProbe4 = sim.data[probes[4]]
-            dataProbe5 = sim.data[probes[5]]
-            dataProbe6 = sim.data[probes[6]]
-        except SystemExit:
-            pass
-        saveArray(dataProbe0[:, 0], dataProbe0[:, 1], self.timeSeries, 'touchScreenReadingNengo')
-        saveArray(dataProbe1[:, 0], dataProbe1[:, 1], self.timeSeries, 'setPointEnsembleNengo')
-        saveArray1(dataProbe2[:, 0], self.timeSeries, 'errorNengoX')
-        saveArray1(dataProbe3[:, 0], self.timeSeries, 'errorNengoY')
-        saveArray1(dataProbe4[:, 0], self.timeSeries, 'derivativeXNengo')
-        saveArray1(dataProbe5[:, 0], self.timeSeries, 'derivativeYNengo')
-        saveArray(dataProbe6[:, 0], dataProbe6[:, 1], self.timeSeries, 'controlNengo')
-        saveTimeArray(self.timeSeries, sim.dt, 'PIDNengo_timeSeries')
-        saveArrayACC(dataProbe1[:, 0], dataProbe1[:, 1], self.timeSeries, 'setPointEnsembleNengo')
-        saveArrayACC(dataProbe0[:, 0], dataProbe0[:, 1], self.timeSeries, 'touchScreenReadingNengo')
-        saveArrayACC(dataProbe6[:, 0], dataProbe6[:, 1], self.timeSeries, 'controlNengo')
-        saveArrayACC(dataProbe2[:, 0], dataProbe3[:, 0], self.timeSeries, 'errorNengo')
-        #saveArrayACC(dataProbe3[:, 0], self.timeSeries, 'errorNengoY')
-        sys.exit()
+        
+#         probes = p.get_probes()
+#         self.start_time = rospy.Time.now()
+#         try:
+#             for i in range(6000): 
+#                 self.current_time = (rospy.Time.now() - self.start_time).to_sec() #(time.time() - self.start_time) #(rospy.Time.now() - self.start_time).to_sec()
+#                 self.timeSeries = np.append(self.timeSeries, self.current_time)
+#                 sim.step()
+#                 #self.rate.sleep()
+#             dataProbe0 = sim.data[probes[0]]
+#             dataProbe1 = sim.data[probes[1]]
+#             dataProbe2 = sim.data[probes[2]]
+#             dataProbe3 = sim.data[probes[3]]
+#             dataProbe4 = sim.data[probes[4]]
+#             dataProbe5 = sim.data[probes[5]]
+#             dataProbe6 = sim.data[probes[6]]
+#         except SystemExit:
+#             pass
+#         saveArray(dataProbe0[:, 0], dataProbe0[:, 1], self.timeSeries, 'touchScreenReadingNengo')
+#         saveArray(dataProbe1[:, 0], dataProbe1[:, 1], self.timeSeries, 'setPointEnsembleNengo')
+#         saveArray1(dataProbe2[:, 0], self.timeSeries, 'errorNengoX')
+#         saveArray1(dataProbe3[:, 0], self.timeSeries, 'errorNengoY')
+#         saveArray1(dataProbe4[:, 0], self.timeSeries, 'derivativeXNengo')
+#         saveArray1(dataProbe5[:, 0], self.timeSeries, 'derivativeYNengo')
+#         saveArray(dataProbe6[:, 0], dataProbe6[:, 1], self.timeSeries, 'controlNengo')
+#         saveTimeArray(self.timeSeries, sim.dt, 'PIDNengo_timeSeries')
+#         saveArrayACC(dataProbe1[:, 0], dataProbe1[:, 1], self.timeSeries, 'setPointEnsembleNengo')
+#         saveArrayACC(dataProbe0[:, 0], dataProbe0[:, 1], self.timeSeries, 'touchScreenReadingNengo')
+#         saveArrayACC(dataProbe6[:, 0], dataProbe6[:, 1], self.timeSeries, 'controlNengo')
+#         saveArrayACC(dataProbe2[:, 0], dataProbe3[:, 0], self.timeSeries, 'errorNengo')
+#         #saveArrayACC(dataProbe3[:, 0], self.timeSeries, 'errorNengoY')
+#         sys.exit()
 
 def send_interrupt_to_other_code():
     # Assuming the other code's process name is "other_code.py"
@@ -326,6 +340,7 @@ if __name__ == '__main__':
         saveArray(dataProbe4[:, 0], dataProbe5[:, 0], timeseries, 'derivativeNengo')
         saveArray(dataProbe6[:, 0], dataProbe6[:, 1], timeseries, 'controlNengo')
         saveArray(frequency, frequency, timeseries, 'frequencyNengo')
+        saveArray(p.tn, p.tn, timeseries, 'measurementTimeNengo')
         send_interrupt_to_other_code()
     except rospy.ROSInterruptException: 
         pass

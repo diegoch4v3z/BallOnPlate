@@ -1,0 +1,51 @@
+# INTEL CORPORATION CONFIDENTIAL AND PROPRIETARY
+#
+# Copyright © 2018-2021 Intel Corporation.
+#
+# This software and the related documents are Intel copyrighted
+# materials, and your use of them is governed by the express
+# license under which they were provided to you (License). Unless
+# the License provides otherwise, you may not use, modify, copy,
+# publish, distribute, disclose or transmit  this software or the
+# related documents without Intel's prior written permission.
+#
+# This software and the related documents are provided as is, with
+# no express or implied warranties, other than those that are
+# expressly stated in the License.
+
+"""Workload to benchmark a network of 100x100 fully connected compartments sending 100 to C1"""
+
+import nxsdk.api.n2a as nx
+from nxsdk.logutils.benchmark_utils import timeit, memit
+from nxsdk.logutils.logging_handler import PerfLoggingHandler
+
+
+class WorkloadSpike1Suite(PerfLoggingHandler):
+    """Workload to benchmark a network of 100x100 fully connected compartments sending 100 to C1"""
+    @timeit
+    @memit
+    def time_workload(self):
+        """Times the workload"""
+        net = nx.NxNet()
+        pbasic = nx.CompartmentPrototype(vThMant=150,
+                                         compartmentCurrentDecay=3276,
+                                         compartmentVoltageDecay=3276,
+                                         logicalCoreId=0)
+
+        connProto1 = nx.ConnectionPrototype(weight=200, delay=0)
+
+        cg1 = net.createCompartmentGroup(size=100, prototype=pbasic)
+        cg2 = net.createCompartmentGroup(size=100, prototype=pbasic)
+
+        cg1.connect(cg2, prototype=connProto1)
+
+        spikeGen = net.createSpikeGenProcess(1)
+        spikeGen.connect(cg1, prototype=connProto1)
+        spikeGen.addSpikes([0], [[x for x in range(1, 100)]])
+
+        net.run(100)
+        net.disconnect()
+
+
+if __name__ == '__main__':
+    WorkloadSpike1Suite().time_workload()

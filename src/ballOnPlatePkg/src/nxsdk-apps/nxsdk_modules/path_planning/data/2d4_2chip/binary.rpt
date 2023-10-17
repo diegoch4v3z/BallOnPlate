@@ -1,0 +1,226 @@
+Assign cluster:c0 to chip:0, coreId4
+Assign cluster:c6 to chip:1, coreId4
+Binary: chip0.binary
+numCores=1
+coreId=4, numCells=8
+cellId=0(0), fanoutCores=1
+	chipID:0 coreId:4 synMapOffset:0
+	fanoutNums:2
+		3
+		1
+cellId=1(1), fanoutCores=1
+	chipID:0 coreId:4 synMapOffset:2
+	fanoutNums:3
+		0
+		2
+		4
+cellId=2(2), fanoutCores=2
+	chipID:0 coreId:4 synMapOffset:4
+	fanoutNums:2
+		1
+		5
+	chipID:1 coreId:4 synMapOffset:0
+	fanoutNums:1
+		6
+cellId=3(4), fanoutCores=1
+	chipID:0 coreId:4 synMapOffset:6
+	fanoutNums:3
+		0
+		4
+		6
+cellId=4(5), fanoutCores=1
+	chipID:0 coreId:4 synMapOffset:8
+	fanoutNums:4
+		3
+		1
+		5
+		7
+cellId=5(6), fanoutCores=2
+	chipID:0 coreId:4 synMapOffset:10
+	fanoutNums:2
+		2
+		4
+	chipID:1 coreId:4 synMapOffset:2
+	fanoutNums:2
+		7
+		0
+cellId=6(8), fanoutCores=2
+	chipID:0 coreId:4 synMapOffset:12
+	fanoutNums:2
+		3
+		7
+	chipID:1 coreId:4 synMapOffset:4
+	fanoutNums:1
+		2
+cellId=7(9), fanoutCores=2
+	chipID:0 coreId:4 synMapOffset:14
+	fanoutNums:2
+		4
+		6
+	chipID:1 coreId:4 synMapOffset:6
+	fanoutNums:2
+		0
+		3
+numSynapses:13
+fanins:13
+	synMapOffset:0
+	numNeurons:2
+		3,2,0
+		1,2,0
+	synMapOffset:2
+	numNeurons:3
+		0,2,0
+		2,2,0
+		4,2,0
+	synMapOffset:4
+	numNeurons:2
+		1,2,0
+		5,2,0
+	synMapOffset:6
+	numNeurons:3
+		0,2,0
+		4,2,0
+		6,2,0
+	synMapOffset:8
+	numNeurons:4
+		3,2,0
+		1,2,0
+		5,2,0
+		7,2,0
+	synMapOffset:10
+	numNeurons:2
+		2,2,0
+		4,2,0
+	synMapOffset:12
+	numNeurons:2
+		3,2,0
+		7,2,0
+	synMapOffset:14
+	numNeurons:2
+		4,2,0
+		6,2,0
+	synMapOffset:16
+	numNeurons:2
+		5,2,0
+		7,2,0
+	synMapOffset:18
+	numNeurons:1
+		6,2,0
+	synMapOffset:20
+	numNeurons:1
+		7,2,0
+	synMapOffset:22
+	numNeurons:1
+		2,2,0
+	synMapOffset:24
+	numNeurons:1
+		5,2,0
+Binary: chip1.binary
+numCores=1
+coreId=4, numCells=8
+cellId=0(10), fanoutCores=2
+	chipID:0 coreId:4 synMapOffset:16
+	fanoutNums:2
+		5
+		7
+	chipID:1 coreId:4 synMapOffset:8
+	fanoutNums:2
+		1
+		4
+cellId=1(11), fanoutCores=1
+	chipID:1 coreId:4 synMapOffset:10
+	fanoutNums:3
+		7
+		0
+		5
+cellId=2(12), fanoutCores=2
+	chipID:0 coreId:4 synMapOffset:18
+	fanoutNums:1
+		6
+	chipID:1 coreId:4 synMapOffset:12
+	fanoutNums:1
+		3
+cellId=3(13), fanoutCores=2
+	chipID:0 coreId:4 synMapOffset:20
+	fanoutNums:1
+		7
+	chipID:1 coreId:4 synMapOffset:14
+	fanoutNums:2
+		4
+		2
+cellId=4(14), fanoutCores=1
+	chipID:1 coreId:4 synMapOffset:16
+	fanoutNums:3
+		0
+		5
+		3
+cellId=5(15), fanoutCores=1
+	chipID:1 coreId:4 synMapOffset:18
+	fanoutNums:2
+		1
+		4
+cellId=6(3), fanoutCores=2
+	chipID:1 coreId:4 synMapOffset:20
+	fanoutNums:1
+		7
+	chipID:0 coreId:4 synMapOffset:22
+	fanoutNums:1
+		2
+cellId=7(7), fanoutCores=2
+	chipID:1 coreId:4 synMapOffset:22
+	fanoutNums:2
+		6
+		1
+	chipID:0 coreId:4 synMapOffset:24
+	fanoutNums:1
+		5
+numSynapses:12
+fanins:12
+	synMapOffset:0
+	numNeurons:1
+		6,2,0
+	synMapOffset:2
+	numNeurons:2
+		7,2,0
+		0,2,0
+	synMapOffset:4
+	numNeurons:1
+		2,2,0
+	synMapOffset:6
+	numNeurons:2
+		0,2,0
+		3,2,0
+	synMapOffset:8
+	numNeurons:2
+		1,2,0
+		4,2,0
+	synMapOffset:10
+	numNeurons:3
+		7,2,0
+		0,2,0
+		5,2,0
+	synMapOffset:12
+	numNeurons:1
+		3,2,0
+	synMapOffset:14
+	numNeurons:2
+		4,2,0
+		2,2,0
+	synMapOffset:16
+	numNeurons:3
+		0,2,0
+		5,2,0
+		3,2,0
+	synMapOffset:18
+	numNeurons:2
+		1,2,0
+		4,2,0
+	synMapOffset:20
+	numNeurons:1
+		7,2,0
+	synMapOffset:22
+	numNeurons:2
+		6,2,0
+		1,2,0
+Chip 0, off Chip Port: 4
+Chip 1, off Chip Port: 5

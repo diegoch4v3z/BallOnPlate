@@ -1,0 +1,4 @@
+numTargets:2
+nodeID	chipID	coreID	neuronID
+0	0	4	0
+99	0	4	99

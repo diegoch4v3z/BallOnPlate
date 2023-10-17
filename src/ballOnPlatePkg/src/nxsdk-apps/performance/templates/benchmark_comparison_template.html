@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+
+<head>
+	<title>NxSDK Benchmarks History</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js"></script>
+	    <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
+		<!-- Bootstrap CSS -->
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+
+	<style>
+	body {font-family: 'Montserrat', sans-serif;}
+
+	canvas{
+		-moz-user-select: none;
+		-webkit-user-select: none;
+		-ms-user-select: none;
+		height:250px !important;
+	}
+	</style>
+</head>
+
+<body>
+
+	<h1 style="text-align:left;float:left;">NxSDK Benchmarks History</h1>
+
+	<h5 style="text-align:right;float:right;">Snapshot as of: {{ snapshotTime }}</h5>
+
+	<hr style="clear:both;"/>
+
+	<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+
+	<div class="container-fluid">
+		{% for b in benchmarks %}
+		<div class="row-fluid">
+				<canvas id="canvas{{ loop.index }}"></canvas>
+		</div>
+		<div class="row-fluid; text-center">
+				Improvement
+				{% for stat in b.stats %}
+				{{ stat.duration }}
+
+				{% if stat.change >= 0 %}
+				<span class="text-success">{{ stat.change }}{{ stat.percentage }}</span>
+				{% elif stat.change > -10 %}
+				<span class="text-warning">{{ stat.change }}{{ stat.percentage }}</span>
+				{% else %}
+				<span class="text-danger">{{ stat.change }}{{ stat.percentage }}</span>
+				{% endif %}
+
+				{% endfor %}
+				({{ b.ordering }})
+		</div>
+
+		{% endfor %}
+	</div>
+
+	<script>
+	    var BLUE='rgb(54, 162, 235)'
+
+	    {% for b in benchmarks %}
+		var config{{ loop.index }} = {
+			type: 'line',
+			data: {
+				labels: {{ b.xdata }},
+				datasets: [{
+					label: '{{ b.xlabel }}',
+					fill: false,
+					backgroundColor: BLUE,
+					borderColor: BLUE,
+					data: {{ b.ydata }},
+				}]
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				title: {
+					display: true,
+					text: '{{ b.title }}'
+				},
+				tooltips: {
+					mode: 'index',
+					intersect: false,
+				},
+				hover: {
+					mode: 'nearest',
+					intersect: true
+				},
+				scales: {
+					xAxes: [{
+						display: false,
+						scaleLabel: {
+							display: true,
+							labelString: '{{ b.xlabel }}'
+						}
+					}],
+					yAxes: [{
+						display: true,
+						scaleLabel: {
+							display: true,
+							labelString: '{{ b.ylabel }}'
+						}
+					}]
+				}
+			}
+		};
+		{% endfor %}
+
+
+		window.onload = function() {
+
+			{% for b in benchmarks %}
+
+			var ctx{{ loop.index }} = document.getElementById('canvas{{ loop.index }}').getContext('2d');
+			window.myLine = new Chart(ctx{{ loop.index }}, config{{ loop.index }});
+
+			{% endfor %}
+
+		};
+
+	</script>
+
+</body>
+</html>
+

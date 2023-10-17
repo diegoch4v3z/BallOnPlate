@@ -1,0 +1,58 @@
+/*
+INTEL CONFIDENTIAL
+
+Copyright © 2018-2021 Intel Corporation.
+
+This software and the related documents are Intel copyrighted
+materials, and your use of them is governed by the express
+license under which they were provided to you (License). Unless
+the License provides otherwise, you may not use, modify, copy,
+publish, distribute, disclose or transmit  this software or the
+related documents without Intel's prior written permission.
+
+This software and the related documents are provided as is, with
+no express or implied warranties, other than those that are
+expressly stated in the License.
+*/
+
+#include <stdlib.h>
+#include <string.h>
+#include "spiking_write_{{chip}}_{{lmt}}.h"
+#include "nxsdk.h"
+#include <unistd.h>
+#include <time.h>
+
+static int spikeChannelId = -1;
+static int resultChannelId = -1;
+static int dataSizeChannelId = -1;
+static int infoChannelId = -1;
+
+static int data[16] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
+static uint32_t elapsed_time = 0;
+static uint32_t clock_freq = 0;
+static uint32_t dataSize = 0;
+static uint32_t elementSize = 0;
+
+int doSpiking(runState *s) {
+    if (s->time_step == 1){
+        spikeChannelId = getChannelID("spikeChannel_{{chip}}_{{lmt}}");
+        infoChannelId = getChannelID("infoChannel_{{chip}}_{{lmt}}");
+        dataSizeChannelId = getChannelID("dataSizeChannel_{{chip}}_{{lmt}}");
+        resultChannelId = getChannelID("lmtResultChannel_{{chip}}_{{lmt}}");
+    }
+    return 1;
+}
+
+void runSpiking(runState *s) {
+    readChannel(dataSizeChannelId,&dataSize,1);
+    readChannel(infoChannelId,&elementSize,1);
+    clock_t start = clock() ;
+    for (int i =0;i<dataSize/(elementSize/4);i++){
+        writeChannel(spikeChannelId,data,1);
+    }
+    clock_t end = clock() ;
+    elapsed_time = (end-start) ;
+    clock_freq = CLOCKS_PER_SEC;
+    writeChannel(resultChannelId, &elapsed_time, 1);
+    writeChannel(resultChannelId, &clock_freq, 1);
+}

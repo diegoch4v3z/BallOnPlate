@@ -16,8 +16,12 @@ from constants import Constants
 
 class touchScreen: 
     def __init__(self): 
+        # Parameters 
+        self.pubRate = 120 # Hertz 
+        self.queueSizePar = 10
         rospy.init_node('Touchscreen', anonymous=True)
         self.start_time = rospy.Time.now() 
+        self.t = rospy.Time.now()
         self.dataXPlot = np.array([])
         self.dataYPlot = np.array([])
         self.dataXPlotFiltered = np.array([])
@@ -26,17 +30,10 @@ class touchScreen:
         self.frequency = np.array([])
         self.Ix = np.array([])
         self.Iy = np.array([])
+        self.tn = np.array([])
         self.plot = True
         c = Constants()
         self.kPID = c.PIDConstants()
-
-    def movingAverage(self, Ix, Iy, kernelSize, kernelDelay): 
-        kernel = np.ones(kernelSize)/kernelSize
-        dataConvolvedX = np.convolve(Ix[-kernelSize:], kernel, mode = 'same')
-        dataConvolvedY = np.convolve(Iy[-kernelSize:], kernel, mode = 'same')
-        x = dataConvolvedX[kernelDelay]
-        y = dataConvolvedY[kernelDelay]
-        return [x, y]
 
     def initNode(self, idVendor = 0x04d8, idProduct = 0x0c02):  
         print('Initializing touchscreen...')
@@ -56,8 +53,8 @@ class touchScreen:
             usb.util.claim_interface(dev, intf)
 
         # Create ROS Node 
-        self.pub = rospy.Publisher('touchscreenData', Float32MultiArray, queue_size=10)
-        self.rate = rospy.Rate(120)
+        self.pub = rospy.Publisher('touchscreenData', Float32MultiArray, queue_size=self.queueSizePar)
+        self.rate = rospy.Rate(self.pubRate)
         self.dev = dev
         self.ep_in = ep_in
         self.ep_out = ep_out
@@ -90,6 +87,7 @@ class touchScreen:
 
         try:
             while not rospy.is_shutdown():
+                self.tn = np.append(self.tn, (rospy.Time.now() - self.t).to_sec())
                 self.current_time = (rospy.Time.now()).to_sec()
                 data = Float32MultiArray()
                 coordinate = self.getData(self.dev, self.ep_in, self.ep_out)
@@ -103,6 +101,7 @@ class touchScreen:
 
                 data.data = [coordinate[0], coordinate[1]]
                 self.pub.publish(data)
+                #rospy.loginfo("Published Touchscreen Coordinates: %s", data.data)
                 self.rate.sleep()
 
     
@@ -118,6 +117,7 @@ class touchScreen:
                 #saveArrayACC(self.dataXPlot, self.dataYPlot, self.timeSeries, 'touchScreenReadingRaw')
                 saveArray(self.dataXPlot, self.dataYPlot, self.timeSeries, 'touchScreenReadingRaw')
                 saveArray(self.frequency, self.frequency, self.timeSeries, 'touchScreenReadingFrequency')
+                saveArray(self.tn, self.tn, self.timeSeries, 'touchScreenReadingMeasurementTime')
                 
         except rospy.ROSInterruptException: 
             pass

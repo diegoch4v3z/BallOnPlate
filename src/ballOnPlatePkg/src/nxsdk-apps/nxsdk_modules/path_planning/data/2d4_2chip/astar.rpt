@@ -1,0 +1,9 @@
+Number of nodes in shortest path: 7
+nodeID chipID:coreID:neuronID
+0 0:4:0
+4 0:4:3
+8 0:4:6
+12 1:4:2
+13 1:4:3
+14 1:4:4
+15 1:4:5

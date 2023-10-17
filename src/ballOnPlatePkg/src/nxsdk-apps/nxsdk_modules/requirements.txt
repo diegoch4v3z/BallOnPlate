@@ -1,0 +1,6 @@
+keras
+tensorflow
+snntoolbox
+pygame
+PyYAML
+h5py==2.10.0

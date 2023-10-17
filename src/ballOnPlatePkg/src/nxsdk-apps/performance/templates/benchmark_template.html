@@ -1,0 +1,149 @@
+<!doctype html>
+    <html lang="en">
+      <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+        <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
+
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap4.min.css">
+
+
+        <style>
+            body {font-family: 'Montserrat', sans-serif;}
+        </style>
+
+        <title>NxSDK Benchmarks</title>
+      </head>
+      <body>
+
+        <!-- Optional JavaScript -->
+        <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+
+        <div class="container-fluid">
+
+            <h1 style="text-align:left;float:left;">NxSDK Benchmark Suite</h1>
+
+            <h5 style="text-align:right;float:right;">Snapshot as of: {{ snapshotTime }}</h5>
+
+            <hr style="clear:both;"/>
+            
+            <table id="benchmarkList" class="table table-striped; center">
+
+            <thead class="thead-dark">
+                <tr>
+                    <th>Workload</th>
+                    <th>Group</th>
+                    <th>Runtime (s)</th>
+		    <th>Memory Use (MB)</th>
+                    {% for bh in breakdownMetricsHeaders %}
+                        <th>{{ bh[0] }} ({{ bh[1] }})</th>
+                    {% endfor %}
+                    <th>Stdout</th>
+                </tr>
+            </thead>
+
+            <tbody>
+            {% for b in benchmarks %}
+
+            <tr >
+                <td title="{{ b.description }}">{{ b.workload }}</td>
+                <td>{{ b.workload_group }}</td>
+                <td>{{ b.runtime.value }}</td>
+		<td>{{ b.memory_use.value }}</td>
+                {% for m in b.metrics.values() %}
+                    <td>{{ m.value }}</td>
+                {% endfor %}
+                <td>
+                    <p>
+                        <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#collapseExample{{ loop.index }}" aria-expanded="false" aria-controls="collapseExample{{ loop.index }}">
+                        Output Log
+                        </button>
+                    </p>
+                    <div class="collapse" id="collapseExample{{ loop.index }}">
+                        <div style="white-space:pre;" class="card card-body">{{ b.stdout }}</div>
+                    </div>
+                </td>
+
+            </tr>
+
+            {% endfor %}
+            </tbody>
+
+        </table>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
+    <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap4.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.flash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.print.min.js"></script>
+
+
+    <script>
+        $(document).ready(function() {
+            var groupColumn = 1;
+            $('#benchmarkList').DataTable( {
+
+                "columnDefs": [
+                    { "visible": false, "targets": groupColumn }
+                ],
+                "order": [[ groupColumn, 'asc' ]],
+                "displayLength": 25,
+                "drawCallback": function ( settings ) {
+                      var api = this.api();
+                      var rows = api.rows( {page:'current'} ).nodes();
+                      var last=null;
+
+                      api.column(groupColumn, {page:'current'} ).data().each( function ( group, i ) {
+                              if ( last !== group ) {
+                                $(rows).eq( i ).before(
+                                    '<tr bgcolor="#ddd"><td colspan="5">'+group+'</td></tr>'
+                                );
+
+                                last = group;
+                              }
+                      } );
+                },
+                dom: 'Bfrtip',
+                buttons: [
+                      'copy', 'csv', 'excel', 'pdf', 'print'
+                  ]
+            } );
+        } );
+    </script>
+
+    <h4>Metric Identification</h4>
+
+    <div class="container-fluid">
+        <table id="metrics" class="table table-sm">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for k,v in phaseToFunctionLookup.items() %}
+                <tr>
+                    <td>{{ k }}</td>
+                    <td>{{ v }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+  </body>
+</html>

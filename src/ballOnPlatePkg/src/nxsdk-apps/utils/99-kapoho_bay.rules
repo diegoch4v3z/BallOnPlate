@@ -1,0 +1,2 @@
+SUBSYSTEM=="usb",ATTRS{idProduct}=="6010",ATTRS{idVendor}=="0403",ACTION=="add",DRIVER=="ftdi_sio",RUN+="/bin/sh -c 'echo -n $kernel > $sys$devpath/driver/unbind"
+SUBSYSTEM=="usb",ATTRS{idProduct}=="6010",ATTRS{idVendor}=="0403",ACTION=="add",MODE="0666"

@@ -15,6 +15,8 @@ class servos:
     def __init__(self): 
         rospy.init_node('Servo', anonymous=True)
         self.start_time = rospy.Time.now() 
+        self.t = rospy.Time.now()
+        self.tn = np.array([])
         self.pwm = Adafruit_PCA9685.PCA9685(address=0x40, busnum=2)
         self.pwm.set_pwm_freq(60)
         self.pwm.set_pwm(0, 0, 375)
@@ -34,11 +36,16 @@ class servos:
     
     def initNode(self): 
 
-        self.sub = rospy.Subscriber('servoData', Float32MultiArray, callback=self.callback)
-        self.rate = rospy.Rate(240)
+        self.sub = rospy.Subscriber('servoData', Float32MultiArray, callback=self.callback, queue_size=10)
+        self.rate = rospy.Rate(120)
         self.start_time = rospy.Time.now()
+
+
+        
     
     def callback(self, msg): 
+        #rospy.loginfo("Received Servo Control: %s", msg.data)
+        self.tn = np.append(self.tn, (rospy.Time.now() - self.t).to_sec())
         self.currentTime = rospy.Time.now().to_sec()
         self.i = self.i + 1
         self.datauxPlot = np.append(self.datauxPlot, msg.data[0])
@@ -71,13 +78,11 @@ class servos:
         try: 
             while not rospy.is_shutdown():
                 self.rate.sleep()
-                #print('Hello')
             if self.plot: 
                 #saveArrayACC(self.datauxPlot, self.datauyPlot, self.timeSeries, 'controlSignalData')
                 #saveArrayACC(self.dataServoXPlot, self.dataServoYPlot, self.timeSeries, 'servoSignalData')
                 #aveTimeArrayServos(self.timeSeries, 'ServoTiming')
                 saveArray(self.disturbance, self.disturbance, self.timeSeries, 'disturbanceData')
-                print(np.shape(self.frequency))
                 saveArray(self.frequency, self.frequency, self.timeSeries, 'frequencyServos')
                 #plotTwoAxis(self.datauxPlot, self.datauyPlot, self.timeSeries, 'Control Signal', 'Time (s)', 'Control Signal Value', 'controlSignal')
                 #plotTwoAxis(self.dataServoXPlot, self.dataServoYPlot, self.timeSeries, 'Mapped Signal Servo', 'Time (s)', 'Servo Signal', 'servoSignal', limit=False) 
@@ -91,7 +96,6 @@ class servos:
         x = dataConvolvedX[kernelDelay]
         y = dataConvolvedY[kernelDelay]
         return [x, y]
-
     def uSafety(self, u):
         if u > 1.1:
             u = 1
