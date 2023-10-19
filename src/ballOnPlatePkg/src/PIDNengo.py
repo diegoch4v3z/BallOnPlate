@@ -48,7 +48,8 @@ class PIDNengo:
         # build Nengo model
         self.buildNengoModel(probe = True)
         #self.sim = nengo_loihi.Simulator(self.model, dt=0.008, progress_bar=False, target='loihi', hardware_options={"snip_max_spikes_per_step": 300, "n_chips": 2})
-        self.sim = nengo_loihi.Simulator(self.model, dt=0.008, progress_bar=False, target='sim')
+        #self.sim = nengo_loihi.Simulator(self.model, dt=0.008, progress_bar=False, target='sim')
+        self.sim = nengo.Simulator(self.model, dt=0.008, progress_bar=False, optimize=True)
         self.probes = self.get_probes()
         self.queueSize = 10
         # initialize rospy 
@@ -131,26 +132,18 @@ class PIDNengo:
         with self.model:
             # Nodes
             posXY_node = nengo.Node(self.__call__, size_out=2, size_in=2)
-            r = 0.90
-            #setpoint = nengo.Node(lambda t: [r*np.cos(0.5*t),0])
             setpoint = nengo.Node([0, 0])
-        
-
             delayNodeX = nengo.Node(delayX.step, size_in=1, size_out=1)
             delayNodeY = nengo.Node(delayY.step, size_in=1, size_out=1)
+            bias = nengo.Node([0, 0]) 
 
             #Ensembles
-            posXY_ensemble = nengo.Ensemble(n_neurons=1, dimensions=2, neuron_type=nengo.Direct(), radius=1.5, label='posXY_ensemble') 
+            posXY_ensemble = nengo.Ensemble(n_neurons=100, dimensions=2, neuron_type=nengo.Direct(), radius=1.5, label='posXY_ensemble') 
             setPointEnsemble = nengo.Ensemble(n_neurons=400, dimensions=2, radius = 0.1, neuron_type=NType,  label='setPointEnsemble')
-            #biasNode = nengo.Node([0.01, 0.01])
-            errorX = nengo.Ensemble(n_neurons=400, dimensions=1, radius=2, neuron_type=NType, label = 'errorX')
-            errorY = nengo.Ensemble(n_neurons=400, dimensions=1, radius=2, neuron_type=NType, label = 'errorY')
-
+            errorX = nengo.Ensemble(n_neurons=400, dimensions=1, radius=2, neuron_type=NType, label='errorX')
+            errorY = nengo.Ensemble(n_neurons=400, dimensions=1, radius=2, neuron_type=NType, label='errorY')
             d_e_x = nengo.Ensemble(n_neurons=800, dimensions = 1, radius=1, neuron_type=NType, label='d_e_x')#radius=1)
             d_e_y = nengo.Ensemble(n_neurons=800, dimensions = 1, radius=1, neuron_type=NType, label='d_e_y')#radius=1
-
-            bias = nengo.Node([0, 0]) #[-0.06, 0
-
             u = nengo.Ensemble(n_neurons=1, dimensions=2, neuron_type=nengo.Direct(), radius=1, label='u') #bias=[0.5], gain=[1.0])
             
 
@@ -162,8 +155,7 @@ class PIDNengo:
             nengo.Connection(biasuProbe[0], uProbe[0], synapse=None)
             nengo.Connection(u[1], uProbe[1], synapse=None)
             nengo.Connection(biasuProbe[1], uProbe[1], synapse=None)
-            # nengo.Connection(biasNode[0], errorX, synapse=None)
-            # nengo.Connection(biasNode[1], errorY, synapse=None)
+            
             
 
             # Conections 
@@ -174,10 +166,6 @@ class PIDNengo:
             nengo.Connection(posXY_ensemble[0], errorX, synapse=None, transform=-1.0) #synapse=nengo.Alpha(tau=0.01), transform=-3)
             nengo.Connection(posXY_ensemble[1], errorY, synapse=None, transform=-1.0)
 
-            # nengo.Connection(error[0], d_e_x, transform = 100, synapse = 0.005)#1000)
-            # nengo.Connection(error[0], d_e_x, transform = -100, synapse= 0.015)#-1000)
-            # nengo.Connection(error[1], d_e_y, transform= 100, synapse= 0.005)#1000)
-            # nengo.Connection(error[1], d_e_y, transform=-100, synapse= 0.015)#-1000)
             # Derivative in X
             nengo.Connection(errorX, delayNodeX)
             nengo.Connection(delayNodeX, d_e_x, transform=20) # 20
@@ -190,9 +178,6 @@ class PIDNengo:
             nengo.Connection(errorY, u[1], transform=self.kPID[3]) 
             nengo.Connection(d_e_x, u[0], transform=self.kPID[2])
             nengo.Connection(d_e_y, u[1], transform=self.kPID[5])
-            #nengo.Node([])
-
-            
             nengo.Connection(u, posXY_node, synapse=0.03)#0.05)#synapse=0.005)
             if probe: 
                 self.probesPosXYEnsemble = nengo.Probe(posXY_ensemble)
@@ -203,6 +188,7 @@ class PIDNengo:
                 self.probesd_e_y = nengo.Probe(d_e_y, synapse=0.1)
                 self.probesu = nengo.Probe(u, synapse=0.1)
                 self.probesuNot = nengo.Probe(uProbe, synapse=0.1)
+                #self.PWeights = nengo.Probe(conn1, "weights", sample_every=0.01)
     def run(self): 
         try: 
             while not rospy.is_shutdown(): 
@@ -219,8 +205,7 @@ class PIDNengo:
     def get_model(self): 
         return self.model
     def get_probes(self): 
-        return [self.probesPosXYEnsemble, self.probesSetPointEnsemble, 
-                self.probesErrorX, self.probesErrorY, self.probesd_e_x, self.probesd_e_y, self.probesuNot]
+        return [self.probesPosXYEnsemble, self.probesSetPointEnsemble, self.probesErrorX, self.probesErrorY, self.probesd_e_x, self.probesd_e_y, self.probesuNot] #self.PWeights]
     
 class touchScreenCoordinates: 
     def __init__(self): 
@@ -265,50 +250,6 @@ class touchScreenCoordinates:
         [self.Ix, self.Iy]
     
 
-# class runModel: 
-#     def __init__(self):
-#         self.timeSeries = np.array([])
-#         p = PIDNengo()
-#         model = p.get_model()
-#         #sim = nengo.Simulator(model, dt=0.001, optimize=True)
-#         sim = nengo_loihi.Simulator(model, dt=0.007, target='loihi', progress_bar=False hardware_options=)
-#         # 0.001, 0.002, 0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25
-#         # Working one 0.005
-#         #self.rate = rospy.Rate(240)
-        
-        
-        
-#         probes = p.get_probes()
-#         self.start_time = rospy.Time.now()
-#         try:
-#             for i in range(6000): 
-#                 self.current_time = (rospy.Time.now() - self.start_time).to_sec() #(time.time() - self.start_time) #(rospy.Time.now() - self.start_time).to_sec()
-#                 self.timeSeries = np.append(self.timeSeries, self.current_time)
-#                 sim.step()
-#                 #self.rate.sleep()
-#             dataProbe0 = sim.data[probes[0]]
-#             dataProbe1 = sim.data[probes[1]]
-#             dataProbe2 = sim.data[probes[2]]
-#             dataProbe3 = sim.data[probes[3]]
-#             dataProbe4 = sim.data[probes[4]]
-#             dataProbe5 = sim.data[probes[5]]
-#             dataProbe6 = sim.data[probes[6]]
-#         except SystemExit:
-#             pass
-#         saveArray(dataProbe0[:, 0], dataProbe0[:, 1], self.timeSeries, 'touchScreenReadingNengo')
-#         saveArray(dataProbe1[:, 0], dataProbe1[:, 1], self.timeSeries, 'setPointEnsembleNengo')
-#         saveArray1(dataProbe2[:, 0], self.timeSeries, 'errorNengoX')
-#         saveArray1(dataProbe3[:, 0], self.timeSeries, 'errorNengoY')
-#         saveArray1(dataProbe4[:, 0], self.timeSeries, 'derivativeXNengo')
-#         saveArray1(dataProbe5[:, 0], self.timeSeries, 'derivativeYNengo')
-#         saveArray(dataProbe6[:, 0], dataProbe6[:, 1], self.timeSeries, 'controlNengo')
-#         saveTimeArray(self.timeSeries, sim.dt, 'PIDNengo_timeSeries')
-#         saveArrayACC(dataProbe1[:, 0], dataProbe1[:, 1], self.timeSeries, 'setPointEnsembleNengo')
-#         saveArrayACC(dataProbe0[:, 0], dataProbe0[:, 1], self.timeSeries, 'touchScreenReadingNengo')
-#         saveArrayACC(dataProbe6[:, 0], dataProbe6[:, 1], self.timeSeries, 'controlNengo')
-#         saveArrayACC(dataProbe2[:, 0], dataProbe3[:, 0], self.timeSeries, 'errorNengo')
-#         #saveArrayACC(dataProbe3[:, 0], self.timeSeries, 'errorNengoY')
-#         sys.exit()
 
 def send_interrupt_to_other_code():
     # Assuming the other code's process name is "other_code.py"
@@ -334,6 +275,7 @@ if __name__ == '__main__':
         dataProbe4 = sim.data[probes[4]]
         dataProbe5 = sim.data[probes[5]]
         dataProbe6 = sim.data[probes[6]]
+        #weigths = sim.data[probes[7]]
         saveArray(dataProbe0[:, 0], dataProbe0[:, 1], timeseries, 'touchScreenReadingNengo')
         saveArray(dataProbe1[:, 0], dataProbe1[:, 1], timeseries, 'setPointEnsembleNengo')
         saveArray(dataProbe2[: ,0], dataProbe3[:, 0], timeseries, 'errorNengo')
@@ -341,6 +283,7 @@ if __name__ == '__main__':
         saveArray(dataProbe6[:, 0], dataProbe6[:, 1], timeseries, 'controlNengo')
         saveArray(frequency, frequency, timeseries, 'frequencyNengo')
         saveArray(p.tn, p.tn, timeseries, 'measurementTimeNengo')
+        #saveArray(weigths, weigths, weigths, 'weightsNengo')
         send_interrupt_to_other_code()
     except rospy.ROSInterruptException: 
         pass

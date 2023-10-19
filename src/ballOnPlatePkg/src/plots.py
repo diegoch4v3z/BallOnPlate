@@ -678,6 +678,9 @@ def plotTimeVerification():
 
     print(f"Figure saved as {file_path}")
 
+def plotTouchscreen(): 
+    os.chdir('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/measurements')
+
 def plot(): 
     os.chdir('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/measurements')
     control = np.load('/home/cortana/Ball_On_Plate_ws/src/ballOnPlatePkg/src/measurements/controlNengo.npy')
