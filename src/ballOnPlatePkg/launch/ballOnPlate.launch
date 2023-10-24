@@ -12,17 +12,29 @@
 
     <node
         pkg = 'ballOnPlatePkg'
-        type = 'touchscreen.py'
+        type = 'touchScreen.py'
         name = 'touchScreen'
         output = 'screen'
     ></node>
 
-    <node 
+    <!---   
+    <node
         pkg = 'ballOnPlatePkg'
-        type = 'PIDNengo.py'
-        name = 'PIDNengo'
+        type = 'controller.py'
+        name = 'controller'
         output = 'screen'
     ></node>
+    -->
+
+
+    <node 
+        pkg = 'ballOnPlatePkg'
+        type = 'controller.py'
+        name = 'controller'
+        output = 'screen'
+    ></node>
+
+
 
     <node
         pkg = 'ballOnPlatePkg'

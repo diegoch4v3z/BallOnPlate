@@ -45,16 +45,25 @@ class controller:
         c = Constants()
         self.kPIDNengo = c.PIDNengoConstants() 
         self.kPID = c.PIDConstants()
-        self.dt = 0.008
-        self.filter = True
+        self.dt = 0.001
+        self.filter = False
         self.probe = True
         self.queueSize = 1
         self.runType = 0 # 0 - Simulation, 1 - Emulation, 2 - Hardware
         self.pubRate = 120
+        print('NUMPY VERSION:', np.__version__)
         # build Nengo model
+        
         self.build()
-        self.sim = nengo.Simulator(self.model, dt=self.dt, progress_bar=False, optimize=True)
-
+        #self.sim = nengo.Simulator(self.model, dt=self.dt, progress_bar=False, optimize=True)
+        #self.sim = nengo_loihi.Simulator(self.model, dt=self.dt, progress_bar=False, target='sim')
+        os.environ.update({'KAPOHOBAY': '1'})
+        nengo_loihi.set_defaults()
+        self.sim = nengo_loihi.Simulator(self.model, dt=self.dt, progress_bar=False, target='loihi', hardware_options={"snip_max_spikes_per_step": 300, "n_chips": 2})
+        #self.sim = nengo_loihi.Simulator(self.model, dt=0.008, progress_bar=False, target='loihi', hardware_options={"snip_max_spikes_per_step": 300, "n_chips": 2})
+        #self.sim = nengo_loihi.Simulator(self.model, dt=0.008, progress_bar=False, target='sim')
+        
+        self.sim.sims["loihi"].connect()
         # ROS publishers and subscribers
         rospy.init_node('controller', anonymous=True)
         self.sub = rospy.Subscriber('touchscreenData', Float32MultiArray, callback=self.callback, queue_size=self.queueSize)
@@ -82,7 +91,7 @@ class controller:
         self.y = msg.data[1]
         self.xArray = np.append(self.xArray, self.x)
         self.yArray = np.append(self.yArray, self.y)
-        rospy.loginfo('x: %f, y: %f', self.x, self.y)
+        rospy.loginfo("x: %s, y: %s", self.x, self.y)
         self.sim.step()
         
         
@@ -107,11 +116,12 @@ class controller:
         y = dataConvolvedY[kernelDelay]
         return [x, y]
     
+    
     def build(self): 
         self.model = nengo.Network(label='Controller', seed=1)
         neuronType = nengo_loihi.LoihiLIF()
-        tau = 0.02
-        probeTau = 0.1
+        tau = 0.01
+        probeTau = 0.01
         delayX = DelayX(1, timesteps=int(0.05/0.005))
         delayY = DelayY(1, timesteps=int(0.05/0.005))
         with self.model:
@@ -122,16 +132,21 @@ class controller:
 
 
             # ensembles
-            XY_E = nengo.Ensemble(n_neurons=1000, dimensions=2, neuron_type=neuronType, radius= 4000, label = 'XY_E')
+            XY_E = nengo.Ensemble(n_neurons=400, dimensions=2, neuron_type=neuronType, radius= 150, label = 'XY_E')
 
             # connections
-            XY_C = nengo.Connection(XY_N, XY_E, synapse=None, label='XY_C')
+            #XY_C = nengo.Connection(XY_N, XY_E, synapse=tau, label='XY_C')
+            nengo.Connection(XY_N, XY_E, synapse=tau, label='XY_C')
 
+
+
+            
             # probe 
             if self.probe: 
                 rospy.loginfo('Probing data...')
-                self.XY_E_P = nengo.Probe(XY_E, synapse=probeTau, label='probeXY')
-                self.XY_C_P = nengo.Probe(XY_C, synapse=probeTau, label='probeXY_C')
+                self.XY_E_P = nengo.Probe(XY_E, synapse=probeTau, label='probeXY_E')
+                    #(XY_E, synapse=probeTau, label='probeXY')
+                #self.XY_C_P = nengo.Probe(XY_C, synapse=probeTau, label='probeXY_C')
     def run(self):
         try: 
             while not rospy.is_shutdown(): 
@@ -142,6 +157,7 @@ class controller:
         if self.probe: 
             rospy.loginfo('Saving probe data...')
             saveActivity(self.sim.data[self.XY_E_P][:, 0], self.sim.data[self.XY_E_P][:, 1], self.nengo_process_time, 'XY_E')
+            self.sim.sims["loihi"].close()
         else: 
             pass
 

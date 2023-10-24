@@ -63,8 +63,8 @@ class touchScreen:
         try:
             self.dev.write(ep_out.bEndpointAddress, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
             data = self.dev.read(ep_in.bEndpointAddress, ep_in.wMaxPacketSize)
-            X_Coordintate = data[2] * 256 + data[1]
-            Y_Coordintate = data[4] * 256 + data[3]
+            X_Coordintate = int((data[2] * 256 + data[1] - 280)*100/3900)
+            Y_Coordintate = int((data[4] * 256 + data[3] - 172)*100/3891)
             X_Coordintate = np.array(X_Coordintate)[np.newaxis]
             Y_Coordintate = np.array(Y_Coordintate)[np.newaxis]
         except usb.core.USBError as e:
