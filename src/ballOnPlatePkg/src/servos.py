@@ -36,12 +36,9 @@ class servos:
     
     def initNode(self): 
 
-        self.sub = rospy.Subscriber('servoData', Float32MultiArray, callback=self.callback, queue_size=10)
+        self.sub = rospy.Subscriber('servoData', Float32MultiArray, callback=self.callback, queue_size=1)
         self.rate = rospy.Rate(120)
         self.start_time = rospy.Time.now()
-
-
-        
     
     def callback(self, msg): 
         #rospy.loginfo("Received Servo Control: %s", msg.data)
@@ -55,16 +52,10 @@ class servos:
         self.uy = self.mappingUy(msg.data[1])
         self.dataServoXPlot = np.append(self.dataServoXPlot, self.ux)
         self.dataServoYPlot = np.append(self.dataServoYPlot, self.uy)
-        if self.i == 700 or self.i == 1300: 
-            
-            self.pwm.set_pwm(0, 0, 450)
-            rospy.sleep(0.1)
-            print('Disturbance')
-            self.disturbance = np.append(self.disturbance, np.array([0.25]))
-        else:
-            self.pwm.set_pwm(0, 0, self.ux)
-            self.pwm.set_pwm(1, 0, self.uy)
-            self.disturbance = np.append(self.disturbance, np.array([0]))
+        
+        self.pwm.set_pwm(0, 0, self.ux)
+        self.pwm.set_pwm(1, 0, self.uy)
+        self.disturbance = np.append(self.disturbance, np.array([0]))
         self.current_time = (rospy.Time.now() - self.start_time).to_sec()
         self.timeSeries = np.append(self.timeSeries, self.current_time)
         self.deltaTime = rospy.Time.now().to_sec() - self.currentTime 
@@ -89,6 +80,13 @@ class servos:
         except rospy.ROSInterruptException: 
             pass 
 
+        # 0.3 X+ to -0.3 X- -> Channel 0 is X
+        # 0.3 Y+ to -0.3 Y- -> Channel 1 is Y
+        # 378 is the middle value for the servos X
+        # 370 is the middle value for the servos Y
+        # 450 is 4.0 deg X+ 290 is 4.0 deg. X-
+        # 450 is 4.0 deg Y+ 285 is 4.0 deg. Y-
+
     def movingAverage(self, Ix, Iy, kernelSize, kernelDelay): 
         kernel = np.ones(kernelSize)/kernelSize
         dataConvolvedX = np.convolve(Ix[-kernelSize:], kernel, mode = 'same')
@@ -104,9 +102,9 @@ class servos:
         return u
     def mappingUx(self, u): 
         if u >= 0:
-            servoX = int(-1*115*u+375)
+            servoX = int(-266.666*u+370)#375)
         elif u < 0:
-            servoX = int(-1*125*u+375)
+            servoX = int(-266.666*u+370)
         else: 
             servoX = 375
         #Servo Security Check 
@@ -117,9 +115,9 @@ class servos:
         return servoX
     def mappingUy(self, u): 
         if u >= 0:
-            servoY = int(-1*115*u+375)
+            servoY = int(-275*u+387.5)
         elif u < 0:
-            servoY = int(-1*125*u+375)
+            servoY = int(-275*u+387.5)
         else: 
             servoY = 375
         if(servoY >= 500): 

@@ -3,6 +3,20 @@
 	<!-- launch the bag file recording -->
 	<!-- modify the file for different experiments -->
 
+    <node 
+        pkg = 'ballOnPlatePkg'
+        type = 'PIDNengo.py'
+        name = 'controller'
+        output = 'screen'
+    ></node>
+
+    <node
+        pkg = 'ballOnPlatePkg'
+        type = 'touchscreen.py'
+        name = 'touchScreen'
+        output = 'screen'
+    ></node>
+
     <node
         pkg = 'ballOnPlatePkg'
         type = 'servos.py'
@@ -10,38 +24,6 @@
         output ='screen'
     ></node>
 
-    <node
-        pkg = 'ballOnPlatePkg'
-        type = 'touchScreen.py'
-        name = 'touchScreen'
-        output = 'screen'
-    ></node>
-
-    <!---   
-    <node
-        pkg = 'ballOnPlatePkg'
-        type = 'controller.py'
-        name = 'controller'
-        output = 'screen'
-    ></node>
-    -->
-
-
-    <node 
-        pkg = 'ballOnPlatePkg'
-        type = 'controller.py'
-        name = 'controller'
-        output = 'screen'
-    ></node>
-
-
-
-    <node
-        pkg = 'ballOnPlatePkg'
-        type = 'PID.py'
-        name = 'PID'
-        output = 'screen'
-    ></node>
 
 
 </launch>

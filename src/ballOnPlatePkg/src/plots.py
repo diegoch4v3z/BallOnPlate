@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
 
+
 def plotTwoAxis(data1, data2, timestamp, title, xLabel, yLabel, figure_name, label1='Label1', label2='Label2', limit=False): 
     plt.figure()
     plt.plot(timestamp, data1, label=label1)
@@ -830,4 +831,7 @@ def plot():
     
 
 if __name__ == '__main__':
-    plot()
+    print("Hellos")
+    print(signal.__file__)
+    print(time.time)
+    

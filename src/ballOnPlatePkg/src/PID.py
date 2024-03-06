@@ -100,7 +100,7 @@ class PIDClass:
 
         servoData = Float32MultiArray()
         servoData.data = [ux, uy]
-        #self.pubServo.publish(servoData)
+        self.pubServo.publish(servoData)
 
         self.rate.sleep()
         

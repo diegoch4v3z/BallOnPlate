@@ -29,7 +29,7 @@ import time
 class touchScreen:
     def __init__(self):
         # Parameters
-        self.pubRate = 120 
+        self.pubRate = 60 
         self.queueSize = 1
         c = Constants()
         self.kPID = c.PIDConstants()
@@ -76,8 +76,6 @@ class touchScreen:
         msg = Float32MultiArray()
         self.arr = np.append(self.arr, data, axis=1)
         msg.data = [float(data[0][0]), float(data[1][0])]
-        # if len(self.arr[0,:]) and len(self.arr[1,:]) > self.kPID[7]:
-        #     self.xyFiltered = self.movingAverage(self.arr[0,:], self.arr[1,:], self.kPID[7], self.kPID[8])
         self.publisher.publish(msg)
 
     def movingAverage(self, Ix, Iy, kernelSize, kernelDelay): 
@@ -86,7 +84,7 @@ class touchScreen:
         dataConvolvedY = np.convolve(Iy[-kernelSize:], kernel, mode = 'same')
         x = dataConvolvedX[kernelDelay]
         y = dataConvolvedY[kernelDelay]
-        return [x, y]#Ix, Iy
+        return [x, y]
 
 
 if __name__  == '__main__': 
